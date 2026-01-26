@@ -118,20 +118,21 @@ const App = {
             body: `
                 <div class="password-modal">
                     <p class="vault-name">Vault: <strong>${Utils.escapeHtml(vaultName)}</strong></p>
-                    ${!canAutoOpen && hasFileSystemAccess
-                    ? `
+                    ${
+                        !canAutoOpen && hasFileSystemAccess
+                            ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
                         For security, you'll need to select your vault file and enter your password.
                     </p>
                     `
-                    : canAutoOpen
-                        ? `
+                            : canAutoOpen
+                              ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--accent-hover); margin-bottom: 16px;">
                         ✓ Vault file remembered - just enter your password!
                     </p>
                     `
-                        : ""
-                }
+                              : ""
+                    }
                     <div class="form-group">
                         <label for="vault-password">Password</label>
                         <div class="password-input-wrapper">
@@ -147,7 +148,7 @@ const App = {
             footer: `
                 <button class="btn btn-primary" id="btn-unlock">${canAutoOpen ? "Unlock" : "Select & Unlock"}</button>
             `,
-            onClose: () => { },
+            onClose: () => {},
         });
 
         // Return a promise that resolves when action is taken
@@ -310,7 +311,7 @@ const App = {
                 <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
                 <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
             `,
-            onClose: () => { },
+            onClose: () => {},
         });
 
         return new Promise((resolve) => {
@@ -404,9 +405,6 @@ const App = {
                 await Storage.loadFromVault(vaultData);
             }
 
-            // Add vault controls to UI (creates theme-toggle)
-            this.addVaultControls();
-
             // Initialize sidebar
             Sidebar.init();
             console.log("Sidebar ready");
@@ -417,6 +415,9 @@ const App = {
 
             // Setup global functions
             this.setupGlobalFunctions();
+
+            // Add vault controls to UI
+            this.addVaultControls();
 
             // Initialize AI system
             await this.initializeAI();
@@ -460,22 +461,19 @@ const App = {
             const footerDiv = document.createElement("div");
             footerDiv.className = "sidebar-footer";
             footerDiv.innerHTML = `
-                <button class="sidebar-action-btn" id="theme-toggle" title="Toggle theme">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                </button>
                 <button class="sidebar-action-btn" id="btn-vault-settings" title="Vault Settings">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
                     </svg>
+                    <span>Settings</span>
                 </button>
                 <button class="sidebar-action-btn" id="btn-vault-lock" title="Lock Vault">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0110 0v4"></path>
                     </svg>
+                    <span>Lock</span>
                 </button>
             `;
             sidebar.appendChild(footerDiv);
@@ -623,9 +621,7 @@ const App = {
         console.log("  getAttachments() - Get all attachments");
         console.log("  lockVault() - Lock the vault");
         console.log("  getVaultStatus() - Get vault status");
-        console.log(
-            "  releaseVaultHandle() - Release file handle for cloud sync",
-        );
+        console.log("  releaseVaultHandle() - Release file handle for cloud sync");
     },
 };
 
@@ -646,22 +642,13 @@ window.addEventListener("beforeunload", async (e) => {
 
 // Save when tab becomes hidden (helps ensure data is saved before switching apps)
 document.addEventListener("visibilitychange", () => {
-    if (
-        document.visibilityState === "hidden" &&
-        App.isInitialized &&
-        !Vault.isLocked
-    ) {
+    if (document.visibilityState === "hidden" && App.isInitialized && !Vault.isLocked) {
         // User switched away - save data
-        Storage.saveToVault()
-            .then(() => {
-                console.log("Vault: Saved on visibility change");
-            })
-            .catch((err) => {
-                console.warn(
-                    "Vault: Could not save on visibility change:",
-                    err,
-                );
-            });
+        Storage.saveToVault().then(() => {
+            console.log("Vault: Saved on visibility change");
+        }).catch(err => {
+            console.warn("Vault: Could not save on visibility change:", err);
+        });
     }
 });
 

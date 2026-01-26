@@ -120,30 +120,21 @@ const Storage = {
         } catch (error) {
             console.error("Storage: Failed to save to vault:", error);
             this.lastSaveSuccess = false;
-
+            
             // Show user-friendly error for cloud sync issues
-            if (
-                error.message?.includes("locked") ||
+            if (error.message?.includes("locked") || 
                 error.name === "NoModificationAllowedError" ||
-                error.message?.includes("retries")
-            ) {
-                console.warn(
-                    "Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.",
-                );
-                console.warn(
-                    "Storage: Tip: Right-click your .aladin file → 'Always keep on this device'",
-                );
-
+                error.message?.includes("retries")) {
+                console.warn("Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.");
+                console.warn("Storage: Tip: Right-click your .aladin file → 'Always keep on this device'");
+                
                 // Dispatch event so UI can show notification if needed
-                window.dispatchEvent(
-                    new CustomEvent("vault-save-error", {
-                        detail: {
-                            type: "cloud-sync-lock",
-                            message:
-                                "File may be locked by cloud sync. Changes saved to local cache.",
-                        },
-                    }),
-                );
+                window.dispatchEvent(new CustomEvent('vault-save-error', { 
+                    detail: { 
+                        type: 'cloud-sync-lock',
+                        message: 'File may be locked by cloud sync. Changes saved to local cache.'
+                    }
+                }));
             }
         }
     },

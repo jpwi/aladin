@@ -1,0 +1,28 @@
+#!/bin/bash
+# Aladin Launcher - Opens the app in the default browser with a local server
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+RESOURCES="$DIR/../Resources"
+PORT=8765
+
+# Find a free port
+while lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; do
+    PORT=$((PORT + 1))
+done
+
+# Start a simple Python server in the background
+cd "$RESOURCES"
+python3 -m http.server $PORT --bind 127.0.0.1 &
+SERVER_PID=$!
+
+# Wait for server to start
+sleep 0.5
+
+# Open in default browser
+open "http://127.0.0.1:$PORT/index.html"
+
+# Keep running for a while, then clean up
+# The server will be killed when the app is quit
+sleep 3600
+
+kill $SERVER_PID 2>/dev/null

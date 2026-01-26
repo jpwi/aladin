@@ -1,33 +1,34 @@
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Distribution
-dist/
-build/
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS
+# macOS
 .DS_Store
-Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 
-# IDE
-.vscode/
+# Editor directories and files
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# GitHub
-.github/
+# Node.js
+node_modules/
+
+# Local environment files
+.env
+.env.local
+.env*.local
+
+# Vault files (contain encrypted user data)
+*.aladin
+
+# Test coverage
+coverage/
+
+# Playwright
+playwright-report/
+test-results/
+
+# GitHub prompts (local only)
+.github/prompts/

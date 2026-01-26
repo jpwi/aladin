@@ -8,29 +8,31 @@ A local-first, encrypted knowledge base with AI-powered search. All your data st
 
 ### Double-Click Options (No Setup Required!)
 
-| Platform | File | How to Use |
-|----------|------|------------|
-| **macOS** | `dist/Aladin.app` | Just double-click! Opens in browser automatically |
-| **Windows** | `dist/aladin.hta` | Double-click to run as Windows app |
-| **Any Browser** | `dist/aladin-portable.html` | Open directly in Chrome, Edge, or Firefox |
+| Platform        | File                        | How to Use                                        |
+| --------------- | --------------------------- | ------------------------------------------------- |
+| **macOS**       | `dist/Aladin.app`           | Just double-click! Opens in browser automatically |
+| **Windows**     | `dist/aladin.hta`           | Double-click to run as Windows app                |
+| **Any Browser** | `dist/aladin-portable.html` | Open directly in Chrome, Edge, or Firefox         |
 
 ### With Launcher Scripts (Recommended for AI)
 
-| Platform | File | How to Use |
-|----------|------|------------|
+| Platform        | File                        | How to Use                      |
+| --------------- | --------------------------- | ------------------------------- |
 | **macOS/Linux** | `dist/Start Aladin.command` | Double-click, runs local server |
-| **Windows** | `dist/Start Aladin.bat` | Double-click, runs local server |
+| **Windows**     | `dist/Start Aladin.bat`     | Double-click, runs local server |
 
 ---
 
 ## 📦 Distribution
 
 ### Build All Packages
+
 ```bash
 python3 build.py
 ```
 
 This creates:
+
 - `dist/aladin-portable.html` - Single file, works everywhere
 - `dist/Aladin.app` - macOS app bundle
 - `dist/aladin.hta` - Windows HTA application
@@ -49,11 +51,13 @@ This creates:
 ## 🦙 AI Features (Ollama)
 
 ### For the Standalone App
+
 The macOS app and launcher scripts handle CORS automatically.
 
 ### For Portable HTML / Direct Browser
 
 **macOS (Ollama Desktop App):**
+
 ```bash
 # One-time setup - run in Terminal:
 launchctl setenv OLLAMA_ORIGINS "*"
@@ -63,11 +67,13 @@ echo 'export OLLAMA_ORIGINS="*"' >> ~/.zshrc
 ```
 
 **Linux:**
+
 ```bash
 OLLAMA_ORIGINS=* ollama serve
 ```
 
 **Windows:**
+
 ```cmd
 set OLLAMA_ORIGINS=* && ollama serve
 ```
@@ -89,9 +95,11 @@ The app is designed to work smoothly with cloud sync:
 3. **Wait a moment** before opening on another device
 
 ### Manual File Release
+
 If you see sync conflicts, run in browser console:
+
 ```javascript
-releaseVaultHandle()
+releaseVaultHandle();
 ```
 
 ---
@@ -145,11 +153,11 @@ aladin/
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
+| Shortcut        | Action         |
+| --------------- | -------------- |
 | `Shift + Space` | Open AI search |
-| `Escape` | Close panels |
-| `Cmd/Ctrl + S` | Force save |
+| `Escape`        | Close panels   |
+| `Cmd/Ctrl + S`  | Force save     |
 
 ---
 
