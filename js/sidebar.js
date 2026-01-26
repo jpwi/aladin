@@ -73,7 +73,7 @@ const Sidebar = {
             type: "header",
             data: {
                 text: headingText,
-                level: 2,
+                level: 1,
             },
         };
 
