@@ -23,6 +23,8 @@ node_modules/
 # Vault files (contain encrypted user data)
 *.aladin
 
-# GitHub config (Copilot instructions, workflows, prompts)
-.github/
-.DS_Store
+# Test coverage
+coverage/
+
+# GitHub prompts (local only)
+.github/prompts/

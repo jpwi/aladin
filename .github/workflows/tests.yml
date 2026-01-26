@@ -1,0 +1,78 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: coverage/
+          retention-days: 7
+
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for syntax errors in JavaScript
+        run: |
+          echo "Checking JavaScript files for syntax errors..."
+          for file in js/*.js; do
+            node --check "$file" || exit 1
+          done
+          echo "✅ All JavaScript files pass syntax check"
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run build script
+        run: python build.py --html
+
+      - name: Verify build output
+        run: |
+          if [ -f dist/aladin-portable.html ]; then
+            echo "✅ Build successful - aladin-portable.html created"
+            ls -la dist/
+          else
+            echo "❌ Build failed - aladin-portable.html not found"
+            exit 1
+          fi

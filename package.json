@@ -1,0 +1,22 @@
+{
+  "name": "aladin",
+  "version": "1.0.0",
+  "description": "Local, Notion-like knowledge base that runs in your browser",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "jsdom": "^25.0.0"
+  },
+  "keywords": [
+    "notes",
+    "knowledge-base",
+    "local-first",
+    "encryption"
+  ],
+  "license": "MIT"
+}
