@@ -144,8 +144,36 @@ body {
     flex-shrink: 0;
 }
 
-/* Search */
+/* Sidebar Header - Actions Row */
+.sidebar-actions-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.daily-note-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.daily-note-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+    color: var(--accent-hover);
+}
+
 .search-container {
+    flex: 1;
     position: relative;
 }
 

@@ -9,6 +9,7 @@ const Sidebar = {
     resizeHandle: null,
     sidebar: null,
     themeToggle: null,
+    dailyNoteBtn: null,
 
     // Heading index for search
     headingIndex: [],
@@ -26,12 +27,87 @@ const Sidebar = {
         this.resizeHandle = document.getElementById("resize-handle");
         this.sidebar = document.getElementById("sidebar");
         this.themeToggle = document.getElementById("theme-toggle");
+        this.dailyNoteBtn = document.getElementById("daily-note-btn");
 
         this.setupSearch();
         this.setupResize();
         this.loadSidebarWidth();
         this.setupHashNavigation();
         this.setupTheme();
+        this.setupDailyNote();
+    },
+
+    /**
+     * Setup daily note functionality
+     */
+    setupDailyNote() {
+        if (!this.dailyNoteBtn) return;
+
+        this.dailyNoteBtn.addEventListener("click", async () => {
+            await this.createDailyNote();
+        });
+    },
+
+    /**
+     * Create a new daily note section with current date
+     */
+    async createDailyNote() {
+        const now = new Date();
+
+        // Format date as YYYY-MM-DD [Day]
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // Get day name
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[now.getDay()];
+
+        // Combine for the heading
+        const headingText = `${dateStr} [${dayName}]`;
+
+        // Create header block with the date
+        const headerBlock = {
+            id: Utils.generateId(),
+            type: "header",
+            data: {
+                text: headingText,
+                level: 2,
+            },
+        };
+
+        // Create empty paragraph block for note content
+        const paragraphBlock = {
+            id: Utils.generateId(),
+            type: "paragraph",
+            data: {
+                text: "",
+            },
+        };
+
+        try {
+            // Get current content
+            const content = await Editor.instance.save();
+
+            // Insert at the beginning of the document
+            content.blocks.unshift(headerBlock, paragraphBlock);
+
+            // Re-render the editor with new content
+            await Editor.instance.render(content);
+
+            // Focus the new paragraph block
+            setTimeout(() => {
+                Editor.instance.caret.setToBlock(1, "start");
+            }, 100);
+
+            // Update sidebar
+            Sidebar.update(content.blocks);
+
+            console.log("Sidebar: Daily note created for", dateStr);
+        } catch (error) {
+            console.error("Sidebar: Failed to create daily note:", error);
+        }
     },
 
     /**
