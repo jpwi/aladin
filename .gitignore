@@ -26,5 +26,9 @@ node_modules/
 # Test coverage
 coverage/
 
+# Playwright
+playwright-report/
+test-results/
+
 # GitHub prompts (local only)
 .github/prompts/
