@@ -1,61 +1,64 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Aladin - Local Knowledge Base</title>
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <div class="app-container">
-            <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
-                    <div class="search-container">
-                        <input
-                            type="text"
-                            id="search-input"
-                            placeholder="Search headings..."
-                            autocomplete="off"
-                        />
-                        <ul
-                            class="search-results hidden"
-                            id="search-results"
-                        ></ul>
-                    </div>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aladin - Local Knowledge Base</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search headings..." autocomplete="off" />
+                    <ul class="search-results hidden" id="search-results"></ul>
                 </div>
-                <nav class="sidebar-nav" id="sidebar-nav">
-                    <ul class="tree" id="heading-tree"></ul>
-                </nav>
-                <div class="resize-handle" id="resize-handle"></div>
-            </aside>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <ul class="tree" id="heading-tree"></ul>
+            </nav>
+            <div class="resize-handle" id="resize-handle"></div>
+            <div class="sidebar-footer">
+                <button class="sidebar-action-btn" id="theme-toggle" title="Toggle theme">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span>Dark Mode</span>
+                </button>
+            </div>
+        </aside>
 
-            <!-- Main Editor Area -->
-            <main class="main-editor" id="main-editor">
-                <div class="editor-container">
-                    <div id="editorjs"></div>
-                </div>
-            </main>
-        </div>
+        <!-- Main Editor Area -->
+        <main class="main-editor" id="main-editor">
+            <div class="editor-container">
+                <div id="editorjs"></div>
+            </div>
+        </main>
+    </div>
 
-        <!-- Editor.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+    <!-- Editor.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
 
-        <!-- App Scripts -->
-        <script src="js/utils.js"></script>
-        <script src="js/crypto.js"></script>
-        <script src="js/vault.js"></script>
-        <script src="js/modal.js"></script>
-        <script src="js/storage.js"></script>
-        <script src="js/file-handler.js"></script>
-        <script src="js/sidebar.js"></script>
-        <script src="js/editor.js"></script>
-        <script src="js/ai.js"></script>
-        <script src="js/ai-chat.js"></script>
-        <script src="js/app.js"></script>
-    </body>
+    <!-- App Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/vault.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/file-handler.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/ai-chat.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
 </html>

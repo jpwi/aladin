@@ -55,6 +55,36 @@
     --transition-base: 200ms ease;
 }
 
+/* Dark Theme */
+:root[data-theme="dark"] {
+    /* Dark backgrounds */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #333333;
+
+    /* Light text */
+    --text-primary: #f5f5f5;
+    --text-secondary: #cccccc;
+    --text-muted: #888888;
+
+    /* Adjusted accents for dark mode */
+    --accent-primary: #7dd3c0;
+    --accent-secondary: #a8e6cf;
+    --accent-tertiary: #88d8c0;
+    --accent-light: #1a2a25;
+    --accent-hover: #5cc4b0;
+    --accent-focus: #4db8a4;
+
+    /* Dark borders */
+    --border-color: #444444;
+    --border-light: #555555;
+
+    /* Dark shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
 /* ========================================
    Reset & Base Styles
    ======================================== */
@@ -575,6 +605,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -700,6 +731,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -766,13 +798,16 @@ h6.ce-header {
 }
 
 @keyframes shake {
+
     0%,
     100% {
         transform: translateX(0);
     }
+
     25% {
         transform: translateX(-5px);
     }
+
     75% {
         transform: translateX(5px);
     }
@@ -1074,11 +1109,13 @@ h6.ce-header {
 
 /* Old vault-controls - keeping for backwards compatibility */
 .vault-controls {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 .vault-btn {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 /* ========================================
@@ -1131,11 +1168,9 @@ h6.ce-header {
     position: absolute;
     inset: -2px;
     border-radius: 30px;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0) 0%,
-        rgba(125, 211, 192, 0) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0) 0%,
+            rgba(125, 211, 192, 0) 100%);
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -1159,31 +1194,29 @@ h6.ce-header {
 
 .ai-search-bar.expanded::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.4) 0%,
-        rgba(168, 230, 207, 0.4) 50%,
-        rgba(136, 216, 192, 0.4) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.4) 0%,
+            rgba(168, 230, 207, 0.4) 50%,
+            rgba(136, 216, 192, 0.4) 100%);
     animation: glowPulse 2s ease-in-out infinite;
 }
 
 .ai-search-bar.has-input::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.6) 0%,
-        rgba(168, 230, 207, 0.6) 50%,
-        rgba(136, 216, 192, 0.6) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.6) 0%,
+            rgba(168, 230, 207, 0.6) 50%,
+            rgba(136, 216, 192, 0.6) 100%);
 }
 
 @keyframes glowPulse {
+
     0%,
     100% {
         opacity: 0.6;
         filter: blur(8px);
     }
+
     50% {
         opacity: 1;
         filter: blur(12px);
@@ -1195,14 +1228,12 @@ h6.ce-header {
     position: absolute;
     inset: -4px;
     border-radius: 32px;
-    background: conic-gradient(
-        from 0deg,
-        rgba(125, 211, 192, 0.8),
-        rgba(168, 230, 207, 0.8),
-        rgba(136, 216, 192, 0.8),
-        rgba(92, 196, 176, 0.8),
-        rgba(125, 211, 192, 0.8)
-    );
+    background: conic-gradient(from 0deg,
+            rgba(125, 211, 192, 0.8),
+            rgba(168, 230, 207, 0.8),
+            rgba(136, 216, 192, 0.8),
+            rgba(92, 196, 176, 0.8),
+            rgba(125, 211, 192, 0.8));
     z-index: -2;
     opacity: 0;
     filter: blur(16px);
@@ -1220,6 +1251,7 @@ h6.ce-header {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -1335,6 +1367,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateX(-50%) translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -1428,6 +1461,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1574,11 +1608,9 @@ h6.ce-header {
 .ai-orb {
     width: 10px;
     height: 10px;
-    background: linear-gradient(
-        135deg,
-        var(--accent-primary),
-        var(--accent-hover)
-    );
+    background: linear-gradient(135deg,
+            var(--accent-primary),
+            var(--accent-hover));
     border-radius: 50%;
     animation: orbBounce 1.4s ease-in-out infinite;
 }
@@ -1586,20 +1618,24 @@ h6.ce-header {
 .ai-orb:nth-child(1) {
     animation-delay: -0.32s;
 }
+
 .ai-orb:nth-child(2) {
     animation-delay: -0.16s;
 }
+
 .ai-orb:nth-child(3) {
     animation-delay: 0s;
 }
 
 @keyframes orbBounce {
+
     0%,
     80%,
     100% {
         transform: scale(0.6);
         opacity: 0.5;
     }
+
     40% {
         transform: scale(1);
         opacity: 1;
