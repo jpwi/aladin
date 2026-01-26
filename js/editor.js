@@ -429,23 +429,23 @@ const Editor = {
     atOptions: [
         {
             name: "today",
-            getDate: function () { return Editor.getDateInBerlin(new Date()); }
+            getDate: function () { return Editor.formatDateISO(new Date()); }
         },
         {
             name: "yesterday",
-            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.getDateInBerlin(d); }
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.formatDateISO(d); }
         },
         {
             name: "tomorrow",
-            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.getDateInBerlin(d); }
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next week",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 7); return Editor.formatDateISO(d); }
         },
         {
             name: "next month",
-            getDate: function () { const d = new Date(); return Editor.getDateInBerlin(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
-        },
-        {
-            name: "previous month",
-            getDate: function () { const d = new Date(); return Editor.getDateInBerlin(new Date(d.getFullYear(), d.getMonth() - 1, d.getDate())); }
+            getDate: function () { const d = new Date(); return Editor.formatDateISO(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
         },
     ],
 
@@ -748,9 +748,11 @@ const Editor = {
     // USING @ to input relative date value
 
     /**
-     * Get date formatted in Berlin timezone (YYYY-MM-DD format)
+     * Format date as YYYY-MM-DD string (ISO date format)
+     * @param {Date} date - The date to format
+     * @returns {string} Date in YYYY-MM-DD format
      */
-    getDateInBerlin(date) {
+    formatDateISO(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -947,12 +949,16 @@ const Editor = {
             const newText = text.substring(0, atIndex) + dateValue;
             paragraph.textContent = newText;
 
-            // Move cursor to end of paragraph
-            const newRange = document.createRange();
-            newRange.setStart(paragraph, 1);
-            newRange.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
+            // Move cursor to end of inserted date
+            const textNode = paragraph.firstChild;
+            if (textNode) {
+                const newRange = document.createRange();
+                const cursorPos = Math.min(newText.length, textNode.length);
+                newRange.setStart(textNode, cursorPos);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
         }
 
         this.hideAtMenu();
