@@ -65,7 +65,7 @@ const Sidebar = {
         const dayName = dayNames[now.getDay()];
 
         // Combine for the heading
-        const headingText = `${dateStr} [${dayName}]`;
+        const headingText = `${dateStr} (${dayName})`;
 
         // Create header block with the date
         const headerBlock = {

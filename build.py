@@ -14,6 +14,7 @@ import re
 import json
 import shutil
 import stat
+import argparse
 from pathlib import Path
 
 BUILD_DIR = Path(__file__).parent
@@ -400,37 +401,51 @@ python -m http.server %PORT%
     print("     ✅ Created launcher scripts")
 
 def main():
+    parser = argparse.ArgumentParser(description='Build Aladin distribution packages')
+    parser.add_argument('--html', action='store_true', help='Build only the portable HTML file')
+    args = parser.parse_args()
+    
     print("🧞 Building Aladin Distribution Packages")
     print("=" * 50)
     
     # Create dist directory
     DIST_DIR.mkdir(exist_ok=True)
     
-    # Build portable HTML first (used as base for others)
-    html_content = build_portable_html()
+    if args.html:
+        # Build only the portable HTML
+        build_portable_html()
+        
+        print("\n" + "=" * 50)
+        print("✅ Build complete! Portable HTML created in ./dist/")
+        print("\nPackage created:")
+        print("  📄 aladin-portable.html  - Single file, works everywhere")
+    else:
+        # Build portable HTML first (used as base for others)
+        html_content = build_portable_html()
+        
+        # Build platform-specific packages
+        build_macos_app(html_content)
+        build_windows_hta(html_content)
+        build_pwa()
+        build_launcher_scripts()
+        
+        # Copy attachments folder structure
+        attachments_src = BUILD_DIR / 'attachments'
+        if attachments_src.exists():
+            for dist_path in [DIST_DIR / 'aladin-pwa' / 'attachments']:
+                if not dist_path.exists():
+                    dist_path.mkdir(parents=True)
+        
+        print("\n" + "=" * 50)
+        print("✅ Build complete! Distribution packages in ./dist/")
+        print("\nPackages created:")
+        print("  📄 aladin-portable.html  - Single file, works everywhere")
+        print("  🍎 Aladin.app/           - macOS app bundle (double-click)")
+        print("  🪟 aladin.hta            - Windows app (double-click)")
+        print("  📱 aladin-pwa/           - PWA (install from browser)")
+        print("  🚀 Start Aladin.command  - macOS/Linux launcher script")
+        print("  🚀 Start Aladin.bat      - Windows launcher script")
     
-    # Build platform-specific packages
-    build_macos_app(html_content)
-    build_windows_hta(html_content)
-    build_pwa()
-    build_launcher_scripts()
-    
-    # Copy attachments folder structure
-    attachments_src = BUILD_DIR / 'attachments'
-    if attachments_src.exists():
-        for dist_path in [DIST_DIR / 'aladin-pwa' / 'attachments']:
-            if not dist_path.exists():
-                dist_path.mkdir(parents=True)
-    
-    print("\n" + "=" * 50)
-    print("✅ Build complete! Distribution packages in ./dist/")
-    print("\nPackages created:")
-    print("  📄 aladin-portable.html  - Single file, works everywhere")
-    print("  🍎 Aladin.app/           - macOS app bundle (double-click)")
-    print("  🪟 aladin.hta            - Windows app (double-click)")
-    print("  📱 aladin-pwa/           - PWA (install from browser)")
-    print("  🚀 Start Aladin.command  - macOS/Linux launcher script")
-    print("  🚀 Start Aladin.bat      - Windows launcher script")
     print("\n💡 For AI features, set OLLAMA_ORIGINS=* before starting Ollama")
 
 if __name__ == '__main__':
