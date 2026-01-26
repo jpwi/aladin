@@ -872,7 +872,7 @@ const Editor = {
         try {
             // First, capture empty blocks from DOM before Editor.js filters them
             const emptyBlockIds = this.captureEmptyBlockIds();
-
+            
             const data = await this.instance.save();
 
             // Ensure all blocks have IDs
@@ -983,20 +983,17 @@ const Editor = {
      * Editor.js strips empty blocks, so we mark them with a special invisible character
      */
     preserveSpacers(blocks) {
-        return blocks.map((block) => {
-            if (block.type === "paragraph") {
-                const text = block.data?.text || "";
+        return blocks.map(block => {
+            if (block.type === 'paragraph') {
+                const text = block.data?.text || '';
                 // Check if paragraph is empty or only whitespace/br tags
-                const stripped = text
-                    .replace(/<br\s*\/?>/gi, "")
-                    .replace(/&nbsp;/gi, "")
-                    .trim();
-                if (stripped === "" || stripped === "\u200B") {
+                const stripped = text.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, '').trim();
+                if (stripped === '' || stripped === '\u200B') {
                     // Mark as spacer for storage
                     return {
                         ...block,
-                        type: "spacer",
-                        data: { preserved: true },
+                        type: 'spacer',
+                        data: { preserved: true }
                     };
                 }
             }
@@ -1008,13 +1005,13 @@ const Editor = {
      * Restore spacer markers back to empty paragraphs for editing
      */
     restoreSpacers(blocks) {
-        return blocks.map((block) => {
-            if (block.type === "spacer" && block.data?.preserved) {
+        return blocks.map(block => {
+            if (block.type === 'spacer' && block.data?.preserved) {
                 // Restore as empty paragraph with zero-width space to prevent Editor.js from removing
                 return {
                     ...block,
-                    type: "paragraph",
-                    data: { text: "<br>" },
+                    type: 'paragraph',
+                    data: { text: '<br>' }
                 };
             }
             return block;
@@ -1026,35 +1023,29 @@ const Editor = {
      */
     captureEmptyBlockIds() {
         const emptyBlocks = [];
-        const blockElements = this.container.querySelectorAll(".ce-block");
-
+        const blockElements = this.container.querySelectorAll('.ce-block');
+        
         blockElements.forEach((blockEl, index) => {
-            const contentEl = blockEl.querySelector(
-                '.ce-paragraph, [contenteditable="true"]',
-            );
+            const contentEl = blockEl.querySelector('.ce-paragraph, [contenteditable="true"]');
             if (contentEl) {
-                const text = contentEl.textContent?.trim() || "";
-                const innerHTML = contentEl.innerHTML?.trim() || "";
-
+                const text = contentEl.textContent?.trim() || '';
+                const innerHTML = contentEl.innerHTML?.trim() || '';
+                
                 // Check if the block is effectively empty
-                const isEmptyText = text === "" || text === "\u200B";
-                const isEmptyHtml =
-                    innerHTML === "" ||
-                    innerHTML === "<br>" ||
-                    innerHTML === "&nbsp;";
-
+                const isEmptyText = text === '' || text === '\u200B';
+                const isEmptyHtml = innerHTML === '' || innerHTML === '<br>' || innerHTML === '&nbsp;';
+                
                 if (isEmptyText || isEmptyHtml) {
-                    const blockId =
-                        blockEl.getAttribute("data-id") || blockEl.id;
+                    const blockId = blockEl.getAttribute('data-id') || blockEl.id;
                     emptyBlocks.push({
                         id: blockId,
                         index: index,
-                        type: "paragraph",
+                        type: 'paragraph'
                     });
                 }
             }
         });
-
+        
         return emptyBlocks;
     },
 
@@ -1067,32 +1058,30 @@ const Editor = {
         }
 
         // Build a set of existing block IDs
-        const existingIds = new Set(blocks.map((b) => b.id));
-
+        const existingIds = new Set(blocks.map(b => b.id));
+        
         // Create a new array with empty blocks reinserted
         const result = [...blocks];
-
+        
         // Sort by index to insert in correct order
-        const sortedEmpty = [...emptyBlockIds].sort(
-            (a, b) => a.index - b.index,
-        );
-
+        const sortedEmpty = [...emptyBlockIds].sort((a, b) => a.index - b.index);
+        
         for (const empty of sortedEmpty) {
             // Only reinsert if this block was stripped (not in existing blocks)
             if (!existingIds.has(empty.id)) {
                 // Create empty paragraph block
                 const emptyBlock = {
                     id: empty.id || Utils.generateId(),
-                    type: "paragraph",
-                    data: { text: "<br>" },
+                    type: 'paragraph',
+                    data: { text: '<br>' }
                 };
-
+                
                 // Insert at the original position (capped to array length)
                 const insertIndex = Math.min(empty.index, result.length);
                 result.splice(insertIndex, 0, emptyBlock);
             }
         }
-
+        
         return result;
     },
 };

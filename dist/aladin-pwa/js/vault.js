@@ -494,16 +494,16 @@ const Vault = {
                 });
                 await writable.write(blob);
                 await writable.close();
-
+                
                 // Success - exit the retry loop
                 this.isDirty = false;
                 return;
             } catch (error) {
                 lastError = error;
-
+                
                 // Check if it's a file locking error (common with cloud sync)
-                const isLockError =
-                    error.name === "NoModificationAllowedError" ||
+                const isLockError = 
+                    error.name === "NoModificationAllowedError" || 
                     error.name === "InvalidStateError" ||
                     error.message?.includes("locked") ||
                     error.message?.includes("in use") ||
@@ -525,12 +525,8 @@ const Vault = {
         }
 
         // All retries exhausted
-        console.error(
-            "Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.",
-        );
-        console.error(
-            "Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'",
-        );
+        console.error("Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.");
+        console.error("Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'");
         throw lastError;
     },
 
@@ -680,13 +676,11 @@ const Vault = {
     lock(releaseHandle = false) {
         this.password = null;
         this.isLocked = true;
-
+        
         if (releaseHandle) {
             // Release file handle to allow cloud sync
             this.fileHandle = null;
-            console.log(
-                "Vault: Locked and released file handle for cloud sync",
-            );
+            console.log("Vault: Locked and released file handle for cloud sync");
         } else {
             console.log("Vault: Locked");
         }

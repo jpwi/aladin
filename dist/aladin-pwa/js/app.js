@@ -621,9 +621,7 @@ const App = {
         console.log("  getAttachments() - Get all attachments");
         console.log("  lockVault() - Lock the vault");
         console.log("  getVaultStatus() - Get vault status");
-        console.log(
-            "  releaseVaultHandle() - Release file handle for cloud sync",
-        );
+        console.log("  releaseVaultHandle() - Release file handle for cloud sync");
     },
 };
 
@@ -644,22 +642,13 @@ window.addEventListener("beforeunload", async (e) => {
 
 // Save when tab becomes hidden (helps ensure data is saved before switching apps)
 document.addEventListener("visibilitychange", () => {
-    if (
-        document.visibilityState === "hidden" &&
-        App.isInitialized &&
-        !Vault.isLocked
-    ) {
+    if (document.visibilityState === "hidden" && App.isInitialized && !Vault.isLocked) {
         // User switched away - save data
-        Storage.saveToVault()
-            .then(() => {
-                console.log("Vault: Saved on visibility change");
-            })
-            .catch((err) => {
-                console.warn(
-                    "Vault: Could not save on visibility change:",
-                    err,
-                );
-            });
+        Storage.saveToVault().then(() => {
+            console.log("Vault: Saved on visibility change");
+        }).catch(err => {
+            console.warn("Vault: Could not save on visibility change:", err);
+        });
     }
 });
 

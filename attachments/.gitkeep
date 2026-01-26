@@ -1,0 +1,14 @@
+# Attachments Directory
+
+This folder is reserved for file attachments.
+
+When using the File System Access API or Electron in the future, files will be stored here with their SHA-256 hash as the filename:
+
+```
+attachments/
+├── 92bd11a3f7e8c4d5.pdf
+├── a94f3c2b1e8d7f6a.png
+└── ...
+```
+
+Currently, attachments are stored in IndexedDB as base64-encoded data.
