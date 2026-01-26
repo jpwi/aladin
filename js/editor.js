@@ -319,6 +319,7 @@ const Editor = {
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
                 this.setupSlashCommands();
+                this.setupAtCommands();
                 this.setupDragDrop();
                 this.setupImmediateSave();
                 Sidebar.update(content.blocks);
@@ -420,6 +421,33 @@ const Editor = {
     slashMenu: null,
     slashQuery: "",
     slashSelectedIndex: 0,
+
+    // Date command menu state to calculate relative dates
+    atMenu: null,
+    atSelectedIndex: 0,
+    atQuery: "",
+    atOptions: [
+        {
+            name: "today",
+            getDate: function () { return Editor.getDateInBerlin(new Date()); }
+        },
+        {
+            name: "yesterday",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.getDateInBerlin(d); }
+        },
+        {
+            name: "tomorrow",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.getDateInBerlin(d); }
+        },
+        {
+            name: "next month",
+            getDate: function () { const d = new Date(); return Editor.getDateInBerlin(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
+        },
+        {
+            name: "previous month",
+            getDate: function () { const d = new Date(); return Editor.getDateInBerlin(new Date(d.getFullYear(), d.getMonth() - 1, d.getDate())); }
+        },
+    ],
 
     // Available slash commands
     slashCommands: [
@@ -714,6 +742,220 @@ const Editor = {
         } catch (error) {
             console.error("Error executing slash command:", error);
         }
+    },
+
+
+    // USING @ to input relative date value
+
+    /**
+     * Get date formatted in Berlin timezone (YYYY-MM-DD format)
+     */
+    getDateInBerlin(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
+    /**
+     * Setup at command menu
+     */
+    setupAtCommands() {
+        // Create at menu element
+        this.atMenu = document.createElement("div");
+        this.atMenu.className = "at-menu hidden";
+        this.atMenu.id = "at-menu";
+        document.body.appendChild(this.atMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleAtInput(e);
+        });
+
+        // Handle keyboard navigation in at menu - attach to document with capture phase
+        document.addEventListener("keydown", (e) => {
+            if (this.atMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.atSelectedIndex = Math.min(
+                    this.atSelectedIndex + 1,
+                    this.getFilteredAtOptions().length - 1,
+                );
+                this.updateAtMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.atSelectedIndex = Math.max(
+                    this.atSelectedIndex - 1,
+                    0,
+                );
+                this.updateAtMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredAtOptions();
+                if (options.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.executeAtCommand(options[this.atSelectedIndex]);
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideAtMenu();
+            }
+        }, true); // Use capture phase
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".at-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideAtMenu();
+            }
+        });
+    },
+
+    /**
+     * Handle input for at commands
+     */
+    handleAtInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Check if text contains @
+        const atIndex = text.lastIndexOf("@");
+        if (atIndex !== -1) {
+            // Check if @ is at the end or followed by text
+            const textAfterAt = text.substring(atIndex + 1);
+            this.atQuery = textAfterAt.toLowerCase();
+            this.atSelectedIndex = 0;
+            this.showAtMenu(paragraph, atIndex);
+        } else {
+            this.hideAtMenu();
+        }
+    },
+
+    /**
+     * Get filtered options based on query
+     */
+    getFilteredAtOptions() {
+        if (!this.atQuery) return this.atOptions;
+        return this.atOptions.filter(
+            (opt) => opt.name.toLowerCase().includes(this.atQuery)
+        );
+    },
+
+    /**
+     * Show at menu
+     */
+    showAtMenu(element, atIndex) {
+        const options = this.getFilteredAtOptions();
+        if (options.length === 0) {
+            this.hideAtMenu();
+            return;
+        }
+
+        // Build menu HTML
+        this.atMenu.innerHTML = options
+            .map(
+                (opt, index) => `
+            <div class="at-menu-item ${index === this.atSelectedIndex ? "selected" : ""}" 
+                 data-index="${index}">
+                <span class="at-menu-name">${opt.name}</span>
+                <span class="at-menu-date">${opt.getDate()}</span>
+            </div>
+        `,
+            )
+            .join("");
+
+        // Add click handlers - use mousedown to fire before blur
+        this.atMenu.querySelectorAll(".at-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // Prevent blur
+                e.stopPropagation();
+                const index = parseInt(item.dataset.index);
+                this.executeAtCommand(options[index]);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.atMenu.style.top = `${rect.bottom + 5}px`;
+        this.atMenu.style.left = `${rect.left}px`;
+        this.atMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide at menu
+     */
+    hideAtMenu() {
+        this.atMenu.classList.add("hidden");
+        this.atQuery = "";
+    },
+
+    /**
+     * Update selection highlight in menu
+     */
+    updateAtMenuSelection() {
+        const items = this.atMenu.querySelectorAll(".at-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.atSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute an at command
+     */
+    async executeAtCommand(option) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const atIndex = text.lastIndexOf("@");
+
+        if (atIndex !== -1) {
+            // Get the date in YYYY-MM-DD format
+            const dateValue = option.getDate();
+
+            // Replace @ and query with the date directly in the DOM
+            const newText = text.substring(0, atIndex) + dateValue;
+            paragraph.textContent = newText;
+
+            // Move cursor to end of paragraph
+            const newRange = document.createRange();
+            newRange.setStart(paragraph, 1);
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+        }
+
+        this.hideAtMenu();
     },
 
     /**

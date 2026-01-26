@@ -653,6 +653,67 @@ h6.ce-header {
 }
 
 /* ========================================
+   At Command Menu
+   ======================================== */
+
+.at-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: atMenuIn 0.15s ease;
+}
+
+.at-menu.hidden {
+    display: none;
+}
+
+@keyframes atMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.at-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.at-menu-item:hover,
+.at-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.at-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.at-menu-date {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* ========================================
    Scrollbar
    ======================================== */
 
