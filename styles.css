@@ -608,6 +608,86 @@ h6.ce-header {
 }
 
 /* ========================================
+   Block Drag & Drop
+   ======================================== */
+
+/* Enhanced toolbar settings button for drag */
+.ce-toolbar__settings-btn[data-drag-enhanced="true"] {
+    cursor: grab !important;
+}
+
+.ce-toolbar__settings-btn[data-drag-enhanced="true"]:active {
+    cursor: grabbing !important;
+}
+
+/* Block being dragged */
+.ce-block.dragging {
+    opacity: 0.5;
+    background: var(--accent-light);
+    border-radius: 6px;
+}
+
+/* Drop indicator lines */
+.ce-block.drag-over-top {
+    position: relative;
+}
+
+.ce-block.drag-over-top::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+.ce-block.drag-over-bottom {
+    position: relative;
+}
+
+.ce-block.drag-over-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+/* Container styling when dragging is active */
+.block-dragging .ce-block {
+    transition: transform 0.2s ease;
+}
+
+/* Prevent text selection during drag */
+.block-dragging {
+    user-select: none;
+}
+
+/* Drop indicator element (floating line) */
+.block-drop-indicator {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    pointer-events: none;
+    z-index: 1001;
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.block-drop-indicator.hidden {
+    display: none;
+}
+
+/* ========================================
    Slash Command Menu
    ======================================== */
 
@@ -739,6 +819,188 @@ h6.ce-header {
     font-size: 13px;
     color: var(--text-muted);
     font-family: var(--font-mono);
+}
+
+/* ========================================
+   Hashtag Command Menu
+   ======================================== */
+
+.hashtag-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: hashtagMenuIn 0.15s ease;
+}
+
+.hashtag-menu.hidden {
+    display: none;
+}
+
+@keyframes hashtagMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hashtag-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.hashtag-menu-item:hover,
+.hashtag-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.hashtag-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hashtag-menu-create .hashtag-menu-icon {
+    background: var(--accent-secondary);
+}
+
+.hashtag-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Hashtag Links
+   ======================================== */
+
+.hashtag-link {
+    display: inline;
+    background: var(--accent-light);
+    color: var(--accent-hover);
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.hashtag-link:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+/* ========================================
+   Tag Occurrences Modal
+   ======================================== */
+
+.tag-occurrences {
+    padding: var(--spacing-sm) 0;
+}
+
+.tag-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tag-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tag-count {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.tag-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.tag-occurrence-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tag-occurrence-item {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.tag-occurrence-item:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.tag-occurrence-section {
+    font-size: var(--font-size-sm);
+    color: var(--accent-hover);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tag-occurrence-context {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Block highlight flash when jumping to occurrence */
+.highlight-flash {
+    animation: highlightFlash 2s ease-out;
+}
+
+@keyframes highlightFlash {
+    0%, 20% {
+        background-color: var(--accent-light);
+        box-shadow: 0 0 0 4px var(--accent-primary);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
 }
 
 /* ========================================

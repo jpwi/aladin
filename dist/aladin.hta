@@ -23,10 +23,10 @@
     WINDOWSTATE="normal"
 />
 
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Aladin Portable - Local Knowledge Base</title>
-        <style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aladin Portable - Local Knowledge Base</title>
+    <style>
 /* ========================================
    Aladin - Local Knowledge Base Styles
    ======================================== */
@@ -82,6 +82,36 @@
     /* Transitions */
     --transition-fast: 150ms ease;
     --transition-base: 200ms ease;
+}
+
+/* Dark Theme */
+:root[data-theme="dark"] {
+    /* Dark backgrounds */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #333333;
+
+    /* Light text */
+    --text-primary: #f5f5f5;
+    --text-secondary: #cccccc;
+    --text-muted: #888888;
+
+    /* Adjusted accents for dark mode */
+    --accent-primary: #7dd3c0;
+    --accent-secondary: #a8e6cf;
+    --accent-tertiary: #88d8c0;
+    --accent-light: #1a2a25;
+    --accent-hover: #5cc4b0;
+    --accent-focus: #4db8a4;
+
+    /* Dark borders */
+    --border-color: #444444;
+    --border-light: #555555;
+
+    /* Dark shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* ========================================
@@ -143,8 +173,36 @@ body {
     flex-shrink: 0;
 }
 
-/* Search */
+/* Sidebar Header - Actions Row */
+.sidebar-actions-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.daily-note-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.daily-note-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+    color: var(--accent-hover);
+}
+
 .search-container {
+    flex: 1;
     position: relative;
 }
 
@@ -579,6 +637,86 @@ h6.ce-header {
 }
 
 /* ========================================
+   Block Drag & Drop
+   ======================================== */
+
+/* Enhanced toolbar settings button for drag */
+.ce-toolbar__settings-btn[data-drag-enhanced="true"] {
+    cursor: grab !important;
+}
+
+.ce-toolbar__settings-btn[data-drag-enhanced="true"]:active {
+    cursor: grabbing !important;
+}
+
+/* Block being dragged */
+.ce-block.dragging {
+    opacity: 0.5;
+    background: var(--accent-light);
+    border-radius: 6px;
+}
+
+/* Drop indicator lines */
+.ce-block.drag-over-top {
+    position: relative;
+}
+
+.ce-block.drag-over-top::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+.ce-block.drag-over-bottom {
+    position: relative;
+}
+
+.ce-block.drag-over-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+/* Container styling when dragging is active */
+.block-dragging .ce-block {
+    transition: transform 0.2s ease;
+}
+
+/* Prevent text selection during drag */
+.block-dragging {
+    user-select: none;
+}
+
+/* Drop indicator element (floating line) */
+.block-drop-indicator {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    pointer-events: none;
+    z-index: 1001;
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.block-drop-indicator.hidden {
+    display: none;
+}
+
+/* ========================================
    Slash Command Menu
    ======================================== */
 
@@ -604,6 +742,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -648,6 +787,249 @@ h6.ce-header {
     font-size: 12px;
     color: var(--text-muted);
     font-family: var(--font-mono);
+}
+
+/* ========================================
+   At Command Menu
+   ======================================== */
+
+.at-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: atMenuIn 0.15s ease;
+}
+
+.at-menu.hidden {
+    display: none;
+}
+
+@keyframes atMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.at-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.at-menu-item:hover,
+.at-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.at-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.at-menu-date {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* ========================================
+   Hashtag Command Menu
+   ======================================== */
+
+.hashtag-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: hashtagMenuIn 0.15s ease;
+}
+
+.hashtag-menu.hidden {
+    display: none;
+}
+
+@keyframes hashtagMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hashtag-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.hashtag-menu-item:hover,
+.hashtag-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.hashtag-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hashtag-menu-create .hashtag-menu-icon {
+    background: var(--accent-secondary);
+}
+
+.hashtag-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Hashtag Links
+   ======================================== */
+
+.hashtag-link {
+    display: inline;
+    background: var(--accent-light);
+    color: var(--accent-hover);
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.hashtag-link:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+/* ========================================
+   Tag Occurrences Modal
+   ======================================== */
+
+.tag-occurrences {
+    padding: var(--spacing-sm) 0;
+}
+
+.tag-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tag-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tag-count {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.tag-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.tag-occurrence-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tag-occurrence-item {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.tag-occurrence-item:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.tag-occurrence-section {
+    font-size: var(--font-size-sm);
+    color: var(--accent-hover);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tag-occurrence-context {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Block highlight flash when jumping to occurrence */
+.highlight-flash {
+    animation: highlightFlash 2s ease-out;
+}
+
+@keyframes highlightFlash {
+    0%, 20% {
+        background-color: var(--accent-light);
+        box-shadow: 0 0 0 4px var(--accent-primary);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
 }
 
 /* ========================================
@@ -729,6 +1111,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -795,13 +1178,16 @@ h6.ce-header {
 }
 
 @keyframes shake {
+
     0%,
     100% {
         transform: translateX(0);
     }
+
     25% {
         transform: translateX(-5px);
     }
+
     75% {
         transform: translateX(5px);
     }
@@ -1103,11 +1489,13 @@ h6.ce-header {
 
 /* Old vault-controls - keeping for backwards compatibility */
 .vault-controls {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 .vault-btn {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 /* ========================================
@@ -1160,11 +1548,9 @@ h6.ce-header {
     position: absolute;
     inset: -2px;
     border-radius: 30px;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0) 0%,
-        rgba(125, 211, 192, 0) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0) 0%,
+            rgba(125, 211, 192, 0) 100%);
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -1188,31 +1574,29 @@ h6.ce-header {
 
 .ai-search-bar.expanded::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.4) 0%,
-        rgba(168, 230, 207, 0.4) 50%,
-        rgba(136, 216, 192, 0.4) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.4) 0%,
+            rgba(168, 230, 207, 0.4) 50%,
+            rgba(136, 216, 192, 0.4) 100%);
     animation: glowPulse 2s ease-in-out infinite;
 }
 
 .ai-search-bar.has-input::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.6) 0%,
-        rgba(168, 230, 207, 0.6) 50%,
-        rgba(136, 216, 192, 0.6) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.6) 0%,
+            rgba(168, 230, 207, 0.6) 50%,
+            rgba(136, 216, 192, 0.6) 100%);
 }
 
 @keyframes glowPulse {
+
     0%,
     100% {
         opacity: 0.6;
         filter: blur(8px);
     }
+
     50% {
         opacity: 1;
         filter: blur(12px);
@@ -1224,14 +1608,12 @@ h6.ce-header {
     position: absolute;
     inset: -4px;
     border-radius: 32px;
-    background: conic-gradient(
-        from 0deg,
-        rgba(125, 211, 192, 0.8),
-        rgba(168, 230, 207, 0.8),
-        rgba(136, 216, 192, 0.8),
-        rgba(92, 196, 176, 0.8),
-        rgba(125, 211, 192, 0.8)
-    );
+    background: conic-gradient(from 0deg,
+            rgba(125, 211, 192, 0.8),
+            rgba(168, 230, 207, 0.8),
+            rgba(136, 216, 192, 0.8),
+            rgba(92, 196, 176, 0.8),
+            rgba(125, 211, 192, 0.8));
     z-index: -2;
     opacity: 0;
     filter: blur(16px);
@@ -1249,6 +1631,7 @@ h6.ce-header {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -1364,6 +1747,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateX(-50%) translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -1457,6 +1841,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1603,11 +1988,9 @@ h6.ce-header {
 .ai-orb {
     width: 10px;
     height: 10px;
-    background: linear-gradient(
-        135deg,
-        var(--accent-primary),
-        var(--accent-hover)
-    );
+    background: linear-gradient(135deg,
+            var(--accent-primary),
+            var(--accent-hover));
     border-radius: 50%;
     animation: orbBounce 1.4s ease-in-out infinite;
 }
@@ -1615,20 +1998,24 @@ h6.ce-header {
 .ai-orb:nth-child(1) {
     animation-delay: -0.32s;
 }
+
 .ai-orb:nth-child(2) {
     animation-delay: -0.16s;
 }
+
 .ai-orb:nth-child(3) {
     animation-delay: 0s;
 }
 
 @keyframes orbBounce {
+
     0%,
     80%,
     100% {
         transform: scale(0.6);
         opacity: 0.5;
     }
+
     40% {
         transform: scale(1);
         opacity: 1;
@@ -1835,7 +2222,7 @@ h6.ce-header {
 }
 
 </style>
-    
+
 <script>
 // HTA mode detection
 if (window.external && window.external.msWrapperVersion) {
@@ -1848,47 +2235,51 @@ try {
 } catch(e) {}
 </script>
 </head>
-    <body>
-        <div class="app-container">
-            <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-actions-row">
+                    <button class="daily-note-btn" id="daily-note-btn" title="Create daily note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
                     <div class="search-container">
-                        <input
-                            type="text"
-                            id="search-input"
-                            placeholder="Search headings..."
-                            autocomplete="off"
-                        />
-                        <ul
-                            class="search-results hidden"
-                            id="search-results"
-                        ></ul>
+                        <input type="text" id="search-input" placeholder="Search headings..." autocomplete="off" />
+                        <ul class="search-results hidden" id="search-results"></ul>
                     </div>
                 </div>
-                <nav class="sidebar-nav" id="sidebar-nav">
-                    <ul class="tree" id="heading-tree"></ul>
-                </nav>
-                <div class="resize-handle" id="resize-handle"></div>
-            </aside>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <ul class="tree" id="heading-tree"></ul>
+            </nav>
+            <div class="resize-handle" id="resize-handle"></div>
+        </aside>
 
-            <!-- Main Editor Area -->
-            <main class="main-editor" id="main-editor">
-                <div class="editor-container">
-                    <div id="editorjs"></div>
-                </div>
-            </main>
-        </div>
+        <!-- Main Editor Area -->
+        <main class="main-editor" id="main-editor">
+            <div class="editor-container">
+                <div id="editorjs"></div>
+            </div>
+        </main>
+    </div>
 
-        <!-- Editor.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+    <!-- Editor.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
 
-        <!-- App Scripts -->
-        <script>
+    <!-- App Scripts -->
+    <script>
 /**
  * Utility Functions
  */
@@ -2067,7 +2458,7 @@ const Utils = {
 Object.freeze(Utils);
 
 </script>
-        <script>
+    <script>
 /**
  * Crypto - Encryption/Decryption using Web Crypto API
  * Uses AES-GCM with PBKDF2 key derivation for secure password-based encryption
@@ -2252,7 +2643,7 @@ Object.freeze(Crypto);
 window.Crypto = Crypto;
 
 </script>
-        <script>
+    <script>
 /**
  * Vault - Manages the encrypted single-file storage system
  * Handles file access, encryption/decryption, and sync capabilities
@@ -2749,16 +3140,16 @@ const Vault = {
                 });
                 await writable.write(blob);
                 await writable.close();
-                
+
                 // Success - exit the retry loop
                 this.isDirty = false;
                 return;
             } catch (error) {
                 lastError = error;
-                
+
                 // Check if it's a file locking error (common with cloud sync)
-                const isLockError = 
-                    error.name === "NoModificationAllowedError" || 
+                const isLockError =
+                    error.name === "NoModificationAllowedError" ||
                     error.name === "InvalidStateError" ||
                     error.message?.includes("locked") ||
                     error.message?.includes("in use") ||
@@ -2780,8 +3171,12 @@ const Vault = {
         }
 
         // All retries exhausted
-        console.error("Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.");
-        console.error("Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'");
+        console.error(
+            "Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.",
+        );
+        console.error(
+            "Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'",
+        );
         throw lastError;
     },
 
@@ -2931,11 +3326,13 @@ const Vault = {
     lock(releaseHandle = false) {
         this.password = null;
         this.isLocked = true;
-        
+
         if (releaseHandle) {
             // Release file handle to allow cloud sync
             this.fileHandle = null;
-            console.log("Vault: Locked and released file handle for cloud sync");
+            console.log(
+                "Vault: Locked and released file handle for cloud sync",
+            );
         } else {
             console.log("Vault: Locked");
         }
@@ -3034,7 +3431,7 @@ const Vault = {
 window.Vault = Vault;
 
 </script>
-        <script>
+    <script>
 /**
  * Modal - Reusable modal dialog system for vault operations
  */
@@ -3711,7 +4108,7 @@ const Modal = {
 window.Modal = Modal;
 
 </script>
-        <script>
+    <script>
 /**
  * Storage Abstraction Layer
  * Now integrated with Vault for encrypted single-file storage
@@ -3834,21 +4231,30 @@ const Storage = {
         } catch (error) {
             console.error("Storage: Failed to save to vault:", error);
             this.lastSaveSuccess = false;
-            
+
             // Show user-friendly error for cloud sync issues
-            if (error.message?.includes("locked") || 
+            if (
+                error.message?.includes("locked") ||
                 error.name === "NoModificationAllowedError" ||
-                error.message?.includes("retries")) {
-                console.warn("Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.");
-                console.warn("Storage: Tip: Right-click your .aladin file → 'Always keep on this device'");
-                
+                error.message?.includes("retries")
+            ) {
+                console.warn(
+                    "Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.",
+                );
+                console.warn(
+                    "Storage: Tip: Right-click your .aladin file → 'Always keep on this device'",
+                );
+
                 // Dispatch event so UI can show notification if needed
-                window.dispatchEvent(new CustomEvent('vault-save-error', { 
-                    detail: { 
-                        type: 'cloud-sync-lock',
-                        message: 'File may be locked by cloud sync. Changes saved to local cache.'
-                    }
-                }));
+                window.dispatchEvent(
+                    new CustomEvent("vault-save-error", {
+                        detail: {
+                            type: "cloud-sync-lock",
+                            message:
+                                "File may be locked by cloud sync. Changes saved to local cache.",
+                        },
+                    }),
+                );
             }
         }
     },
@@ -4157,7 +4563,7 @@ const Storage = {
 window.Storage = Storage;
 
 </script>
-        <script>
+    <script>
 /**
  * File Handler - Manages file uploads, hashing, and storage
  */
@@ -4389,7 +4795,7 @@ const FileHandler = {
 window.FileHandler = FileHandler;
 
 </script>
-        <script>
+    <script>
 /**
  * Sidebar - Navigation tree and search functionality
  */
@@ -4400,6 +4806,8 @@ const Sidebar = {
     headingTree: null,
     resizeHandle: null,
     sidebar: null,
+    themeToggle: null,
+    dailyNoteBtn: null,
 
     // Heading index for search
     headingIndex: [],
@@ -4416,11 +4824,88 @@ const Sidebar = {
         this.headingTree = document.getElementById("heading-tree");
         this.resizeHandle = document.getElementById("resize-handle");
         this.sidebar = document.getElementById("sidebar");
+        this.themeToggle = document.getElementById("theme-toggle");
+        this.dailyNoteBtn = document.getElementById("daily-note-btn");
 
         this.setupSearch();
         this.setupResize();
         this.loadSidebarWidth();
         this.setupHashNavigation();
+        this.setupTheme();
+        this.setupDailyNote();
+    },
+
+    /**
+     * Setup daily note functionality
+     */
+    setupDailyNote() {
+        if (!this.dailyNoteBtn) return;
+
+        this.dailyNoteBtn.addEventListener("click", async () => {
+            await this.createDailyNote();
+        });
+    },
+
+    /**
+     * Create a new daily note section with current date
+     */
+    async createDailyNote() {
+        const now = new Date();
+
+        // Format date as YYYY-MM-DD [Day]
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // Get day name
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[now.getDay()];
+
+        // Combine for the heading
+        const headingText = `${dateStr} (${dayName})`;
+
+        // Create header block with the date
+        const headerBlock = {
+            id: Utils.generateId(),
+            type: "header",
+            data: {
+                text: headingText,
+                level: 1,
+            },
+        };
+
+        // Create empty paragraph block for note content
+        const paragraphBlock = {
+            id: Utils.generateId(),
+            type: "paragraph",
+            data: {
+                text: "",
+            },
+        };
+
+        try {
+            // Get current content
+            const content = await Editor.instance.save();
+
+            // Insert at the beginning of the document
+            content.blocks.unshift(headerBlock, paragraphBlock);
+
+            // Re-render the editor with new content
+            await Editor.instance.render(content);
+
+            // Focus the new paragraph block
+            setTimeout(() => {
+                Editor.instance.caret.setToBlock(1, "start");
+            }, 100);
+
+            // Update sidebar
+            Sidebar.update(content.blocks);
+
+            console.log("Sidebar: Daily note created for", dateStr);
+        } catch (error) {
+            console.error("Sidebar: Failed to create daily note:", error);
+        }
     },
 
     /**
@@ -4786,6 +5271,62 @@ const Sidebar = {
     },
 
     /**
+     * Setup theme management
+     */
+    setupTheme() {
+        // Check saved theme and apply it (even if toggle button doesn't exist yet)
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+
+        // Only setup toggle if element exists
+        if (!this.themeToggle) return;
+
+        this.updateThemeIcon(savedTheme || 'light');
+
+        // Attach toggle event
+        this.themeToggle.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+    },
+
+    /**
+     * Toggle theme
+     */
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeIcon(newTheme);
+
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('themeChange', { detail: { theme: newTheme } }));
+    },
+
+    /**
+     * Update theme toggle icon
+     */
+    updateThemeIcon(theme) {
+        if (!this.themeToggle) return;
+        
+        const svg = this.themeToggle.querySelector('svg');
+        if (!svg) return;
+        
+        if (theme === 'dark') {
+            // Sun icon (show sun in dark mode to indicate clicking will switch to light)
+            svg.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+        } else {
+            // Moon icon (show moon in light mode to indicate clicking will switch to dark)
+            svg.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+        }
+    },
+
+    /**
      * Update tree when content changes
      */
     update(blocks) {
@@ -4797,7 +5338,7 @@ const Sidebar = {
 window.Sidebar = Sidebar;
 
 </script>
-        <script>
+    <script>
 /**
  * Editor - Block-based editor using Editor.js
  */
@@ -5122,8 +5663,12 @@ const Editor = {
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
                 this.setupSlashCommands();
+                this.setupAtCommands();
+                this.setupHashtagCommands();
                 this.setupDragDrop();
+                this.setupBlockDragHandles();
                 this.setupImmediateSave();
+                this.loadTagsFromContent(content.blocks);
                 Sidebar.update(content.blocks);
             },
         });
@@ -5223,6 +5768,39 @@ const Editor = {
     slashMenu: null,
     slashQuery: "",
     slashSelectedIndex: 0,
+
+    // Date command menu state to calculate relative dates
+    atMenu: null,
+    atSelectedIndex: 0,
+    atQuery: "",
+    atOptions: [
+        {
+            name: "today",
+            getDate: function () { return Editor.formatDateISO(new Date()); }
+        },
+        {
+            name: "yesterday",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "tomorrow",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next week",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 7); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next month",
+            getDate: function () { const d = new Date(); return Editor.formatDateISO(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
+        },
+    ],
+
+    // Hashtag command menu state
+    hashtagMenu: null,
+    hashtagSelectedIndex: 0,
+    hashtagQuery: "",
+    allTags: [], // Will be populated from storage
 
     // Available slash commands
     slashCommands: [
@@ -5519,6 +6097,853 @@ const Editor = {
         }
     },
 
+
+    // USING @ to input relative date value
+
+    /**
+     * Format date as YYYY-MM-DD string (ISO date format)
+     * @param {Date} date - The date to format
+     * @returns {string} Date in YYYY-MM-DD format
+     */
+    formatDateISO(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
+    /**
+     * Setup at command menu
+     */
+    setupAtCommands() {
+        // Create at menu element
+        this.atMenu = document.createElement("div");
+        this.atMenu.className = "at-menu hidden";
+        this.atMenu.id = "at-menu";
+        document.body.appendChild(this.atMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleAtInput(e);
+        });
+
+        // Handle keyboard navigation in at menu - attach to document with capture phase
+        document.addEventListener("keydown", (e) => {
+            if (this.atMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.atSelectedIndex = Math.min(
+                    this.atSelectedIndex + 1,
+                    this.getFilteredAtOptions().length - 1,
+                );
+                this.updateAtMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.atSelectedIndex = Math.max(
+                    this.atSelectedIndex - 1,
+                    0,
+                );
+                this.updateAtMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredAtOptions();
+                if (options.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.executeAtCommand(options[this.atSelectedIndex]);
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideAtMenu();
+            }
+        }, true); // Use capture phase
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".at-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideAtMenu();
+            }
+        });
+    },
+
+    /**
+     * Handle input for at commands
+     */
+    handleAtInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Check if text contains @
+        const atIndex = text.lastIndexOf("@");
+        if (atIndex !== -1) {
+            // Check if @ is at the end or followed by text
+            const textAfterAt = text.substring(atIndex + 1);
+            this.atQuery = textAfterAt.toLowerCase();
+            this.atSelectedIndex = 0;
+            this.showAtMenu(paragraph, atIndex);
+        } else {
+            this.hideAtMenu();
+        }
+    },
+
+    /**
+     * Get filtered options based on query
+     */
+    getFilteredAtOptions() {
+        if (!this.atQuery) return this.atOptions;
+        return this.atOptions.filter(
+            (opt) => opt.name.toLowerCase().includes(this.atQuery)
+        );
+    },
+
+    /**
+     * Show at menu
+     */
+    showAtMenu(element, atIndex) {
+        const options = this.getFilteredAtOptions();
+        if (options.length === 0) {
+            this.hideAtMenu();
+            return;
+        }
+
+        // Build menu HTML
+        this.atMenu.innerHTML = options
+            .map(
+                (opt, index) => `
+            <div class="at-menu-item ${index === this.atSelectedIndex ? "selected" : ""}" 
+                 data-index="${index}">
+                <span class="at-menu-name">${opt.name}</span>
+                <span class="at-menu-date">${opt.getDate()}</span>
+            </div>
+        `,
+            )
+            .join("");
+
+        // Add click handlers - use mousedown to fire before blur
+        this.atMenu.querySelectorAll(".at-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // Prevent blur
+                e.stopPropagation();
+                const index = parseInt(item.dataset.index);
+                this.executeAtCommand(options[index]);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.atMenu.style.top = `${rect.bottom + 5}px`;
+        this.atMenu.style.left = `${rect.left}px`;
+        this.atMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide at menu
+     */
+    hideAtMenu() {
+        this.atMenu.classList.add("hidden");
+        this.atQuery = "";
+    },
+
+    /**
+     * Update selection highlight in menu
+     */
+    updateAtMenuSelection() {
+        const items = this.atMenu.querySelectorAll(".at-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.atSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute an at command
+     */
+    async executeAtCommand(option) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const atIndex = text.lastIndexOf("@");
+
+        if (atIndex !== -1) {
+            // Get the date in YYYY-MM-DD format
+            const dateValue = option.getDate();
+
+            // Replace @ and query with the date directly in the DOM
+            const newText = text.substring(0, atIndex) + dateValue;
+            paragraph.textContent = newText;
+
+            // Move cursor to end of inserted date
+            const textNode = paragraph.firstChild;
+            if (textNode) {
+                const newRange = document.createRange();
+                const cursorPos = Math.min(newText.length, textNode.length);
+                newRange.setStart(textNode, cursorPos);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+        }
+
+        this.hideAtMenu();
+    },
+
+    // ==========================================
+    // Hashtag Commands (#tag)
+    // ==========================================
+
+    /**
+     * Load existing tags from content blocks
+     */
+    loadTagsFromContent(blocks) {
+        const tags = new Set();
+        const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = tagRegex.exec(plainText)) !== null) {
+                    tags.add(match[1].toLowerCase());
+                }
+            }
+        });
+
+        this.allTags = Array.from(tags).sort();
+        console.log('Loaded tags:', this.allTags);
+    },
+
+    /**
+     * Setup hashtag command menu
+     */
+    setupHashtagCommands() {
+        // Create hashtag menu element
+        this.hashtagMenu = document.createElement("div");
+        this.hashtagMenu.className = "hashtag-menu hidden";
+        this.hashtagMenu.id = "hashtag-menu";
+        document.body.appendChild(this.hashtagMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleHashtagInput(e);
+        });
+
+        // Handle keyboard navigation in hashtag menu
+        document.addEventListener("keydown", (e) => {
+            if (this.hashtagMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredHashtags();
+                this.hashtagSelectedIndex = Math.min(
+                    this.hashtagSelectedIndex + 1,
+                    options.length - 1,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hashtagSelectedIndex = Math.max(
+                    this.hashtagSelectedIndex - 1,
+                    0,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredHashtags();
+                const query = this.hashtagQuery;
+                const showCreateOption = query && query.length > 0 && !this.allTags.includes(query);
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+                
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    
+                    // If selected index is on the "create" option or options is empty
+                    if (this.hashtagSelectedIndex >= options.length && showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeHashtagCommand(options[this.hashtagSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideHashtagMenu();
+            } else if (e.key === " ") {
+                // Space completes current tag input
+                const query = this.hashtagQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeHashtagCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".hashtag-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideHashtagMenu();
+            }
+        });
+
+        // Setup click handler for hashtag links
+        document.addEventListener("click", (e) => {
+            const hashtagLink = e.target.closest(".hashtag-link");
+            if (hashtagLink) {
+                e.preventDefault();
+                const tag = hashtagLink.dataset.tag;
+                if (tag) {
+                    this.showTagOccurrences(tag);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for hashtag commands
+     */
+    handleHashtagInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Find the last # that could be the start of a tag being typed
+        // Look for # followed by optional word characters at the end of text or before cursor
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+        
+        // Match # followed by optional tag characters at end
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+        
+        if (hashMatch) {
+            this.hashtagQuery = hashMatch[1].toLowerCase();
+            this.hashtagSelectedIndex = 0;
+            this.showHashtagMenu(paragraph);
+        } else {
+            this.hideHashtagMenu();
+        }
+    },
+
+    /**
+     * Get cursor offset within element
+     */
+    getCursorOffsetInElement(element) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return 0;
+        
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+        
+        return preCaretRange.toString().length;
+    },
+
+    /**
+     * Get filtered hashtags based on query
+     */
+    getFilteredHashtags() {
+        if (!this.hashtagQuery) return this.allTags.slice(0, 10);
+        return this.allTags.filter(
+            (tag) => tag.toLowerCase().includes(this.hashtagQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show hashtag menu
+     */
+    showHashtagMenu(element) {
+        const filteredTags = this.getFilteredHashtags();
+        const query = this.hashtagQuery;
+        
+        // If we have a query that's not an existing tag, show option to create it
+        const showCreateOption = query && query.length > 0 && !this.allTags.includes(query.toLowerCase());
+        
+        // If no filtered tags and no create option and no query, hide menu
+        if (filteredTags.length === 0 && !showCreateOption) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        // Build menu HTML
+        let menuHtml = '';
+        
+        // Add existing tag suggestions
+        filteredTags.forEach((tag, index) => {
+            menuHtml += `
+                <div class="hashtag-menu-item ${index === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-tag="${tag}">
+                    <span class="hashtag-menu-icon">#</span>
+                    <span class="hashtag-menu-name">${tag}</span>
+                </div>
+            `;
+        });
+        
+        // Add "create new tag" option if query doesn't match existing
+        if (showCreateOption) {
+            const createIndex = filteredTags.length;
+            menuHtml += `
+                <div class="hashtag-menu-item hashtag-menu-create ${createIndex === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-tag="${query}">
+                    <span class="hashtag-menu-icon">+</span>
+                    <span class="hashtag-menu-name">Create #${query}</span>
+                </div>
+            `;
+        }
+        
+        if (!menuHtml) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        this.hashtagMenu.innerHTML = menuHtml;
+
+        // Add click handlers
+        this.hashtagMenu.querySelectorAll(".hashtag-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tag = item.dataset.tag;
+                this.executeHashtagCommand(tag);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.hashtagMenu.style.top = `${rect.bottom + 5}px`;
+        this.hashtagMenu.style.left = `${rect.left}px`;
+        this.hashtagMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide hashtag menu
+     */
+    hideHashtagMenu() {
+        this.hashtagMenu.classList.add("hidden");
+        this.hashtagQuery = "";
+    },
+
+    /**
+     * Update selection highlight in hashtag menu
+     */
+    updateHashtagMenuSelection() {
+        const items = this.hashtagMenu.querySelectorAll(".hashtag-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.hashtagSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute a hashtag command - insert tag as clickable link
+     */
+    async executeHashtagCommand(tagName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        // Get current text and find the # position
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+        
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+        if (!hashMatch) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        const hashIndex = textBeforeCursor.lastIndexOf('#');
+        const beforeHash = text.substring(0, hashIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        // Create the hashtag link HTML
+        const tagLink = `<a href="#" class="hashtag-link" data-tag="${tagName}">#${tagName}</a>`;
+        
+        // Update paragraph with the link
+        paragraph.innerHTML = beforeHash + tagLink + ' ' + afterCursor;
+
+        // Add tag to allTags if new
+        if (!this.allTags.includes(tagName.toLowerCase())) {
+            this.allTags.push(tagName.toLowerCase());
+            this.allTags.sort();
+        }
+
+        // Move cursor after the inserted tag
+        this.moveCursorToEnd(paragraph);
+
+        this.hideHashtagMenu();
+        
+        // Trigger save
+        await this.save();
+    },
+
+    /**
+     * Move cursor to end of element
+     */
+    moveCursorToEnd(element) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    },
+
+    /**
+     * Show modal with all occurrences of a tag
+     */
+    async showTagOccurrences(tagName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const tagRegex = new RegExp(`#${tagName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (tagRegex.test(plainText)) {
+                        // Get context around the tag
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const tagIndex = plainText.toLowerCase().indexOf('#' + tagName.toLowerCase());
+                            const start = Math.max(0, tagIndex - 40);
+                            const end = Math.min(plainText.length, tagIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+                        
+                        // Find parent heading for context
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+                        
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    // Reset regex lastIndex
+                    tagRegex.lastIndex = 0;
+                }
+            });
+
+            // Build modal content
+            let modalBody = `
+                <div class="tag-occurrences">
+                    <div class="tag-header">
+                        <span class="tag-badge">#${Utils.escapeHtml(tagName)}</span>
+                        <span class="tag-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="tag-empty">No occurrences found for this tag.</p>`;
+            } else {
+                modalBody += `<div class="tag-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="tag-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="tag-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="tag-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Tag: #${tagName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            // Add click handlers to jump to occurrence
+            setTimeout(() => {
+                document.querySelectorAll('.tag-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing tag occurrences:', error);
+        }
+    },
+
+    /**
+     * Scroll to a specific block by ID
+     */
+    scrollToBlock(blockId) {
+        const blockElement = document.getElementById(blockId);
+        if (blockElement) {
+            blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            blockElement.classList.add('highlight-flash');
+            setTimeout(() => {
+                blockElement.classList.remove('highlight-flash');
+            }, 2000);
+        }
+    },
+
+    // Block drag state
+    draggedBlock: null,
+    draggedBlockIndex: null,
+    dropIndicator: null,
+
+    /**
+     * Setup drag handles for block reordering
+     * Enhances the existing Editor.js toolbar settings button with drag functionality
+     */
+    setupBlockDragHandles() {
+        // Create drop indicator element
+        this.dropIndicator = document.createElement("div");
+        this.dropIndicator.className = "block-drop-indicator hidden";
+        document.body.appendChild(this.dropIndicator);
+
+        // Observe DOM changes to enhance Editor.js toolbars with drag functionality
+        const observer = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+
+        observer.observe(this.container, {
+            childList: true,
+            subtree: true,
+        });
+
+        // Also observe the document body for the toolbar (Editor.js may append it there)
+        const bodyObserver = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+        bodyObserver.observe(document.body, {
+            childList: true,
+            subtree: false,
+        });
+
+        // Initial setup
+        this.enhanceToolbarWithDrag();
+        this.setupBlockDropZones();
+    },
+
+    /**
+     * Enhance Editor.js toolbar settings button with drag functionality
+     */
+    enhanceToolbarWithDrag() {
+        // Find the Editor.js settings button (the 6-dot button)
+        const settingsBtn = document.querySelector('.ce-toolbar__settings-btn');
+        if (!settingsBtn || settingsBtn.dataset.dragEnhanced) return;
+
+        settingsBtn.dataset.dragEnhanced = 'true';
+        settingsBtn.draggable = true;
+        settingsBtn.title = 'Drag to reorder • Click for settings';
+        settingsBtn.style.cursor = 'grab';
+
+        // Drag start on settings button
+        settingsBtn.addEventListener('dragstart', (e) => {
+            // Find current focused block
+            const focusedBlock = document.querySelector('.ce-block--focused');
+            if (!focusedBlock) {
+                e.preventDefault();
+                return;
+            }
+
+            this.draggedBlock = focusedBlock;
+            this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
+            focusedBlock.classList.add('dragging');
+            
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'block');
+            
+            this.container.classList.add('block-dragging');
+            
+            // Prevent text selection during drag
+            document.body.style.userSelect = 'none';
+        });
+
+        // Drag end
+        settingsBtn.addEventListener('dragend', (e) => {
+            if (this.draggedBlock) {
+                this.draggedBlock.classList.remove('dragging');
+            }
+            this.container.classList.remove('block-dragging');
+            this.dropIndicator.classList.add('hidden');
+            this.draggedBlock = null;
+            this.draggedBlockIndex = null;
+            
+            // Re-enable text selection
+            document.body.style.userSelect = '';
+            
+            // Remove all drag-over classes
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                b.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        });
+    },
+
+    /**
+     * Setup drop zones on all blocks
+     */
+    setupBlockDropZones() {
+        // Use event delegation on the container for drop zones
+        this.container.addEventListener('dragover', (e) => {
+            if (!this.draggedBlock) return;
+            
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+            
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            // Clear all previous indicators
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                if (b !== block) {
+                    b.classList.remove('drag-over-top', 'drag-over-bottom');
+                }
+            });
+
+            // Determine if dropping above or below this block
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+
+            // Clear previous indicators on this block
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+            
+            // Add appropriate indicator
+            if (isAbove) {
+                block.classList.add('drag-over-top');
+            } else {
+                block.classList.add('drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('dragleave', (e) => {
+            const block = e.target.closest('.ce-block');
+            if (block && !block.contains(e.relatedTarget)) {
+                block.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('drop', async (e) => {
+            if (!this.draggedBlock) return;
+            
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+            
+            e.preventDefault();
+
+            const fromIndex = this.draggedBlockIndex;
+            const toBlockIndex = this.getBlockIndex(block);
+            
+            // Determine if dropping above or below
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+            
+            let toIndex = isAbove ? toBlockIndex : toBlockIndex + 1;
+            
+            // Adjust if moving down (since the block will be removed first)
+            if (fromIndex < toIndex) {
+                toIndex--;
+            }
+
+            // Clear indicators
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            // Move the block using Editor.js API
+            if (fromIndex !== toIndex && fromIndex >= 0) {
+                try {
+                    await this.instance.blocks.move(toIndex, fromIndex);
+                    await this.save();
+                    console.log(`Block moved from ${fromIndex} to ${toIndex}`);
+                } catch (error) {
+                    console.error('Failed to move block:', error);
+                }
+            }
+        });
+    },
+
+    /**
+     * Get the index of a block element
+     */
+    getBlockIndex(blockElement) {
+        const blocks = this.container.querySelectorAll('.ce-block');
+        let index = -1;
+        blocks.forEach((b, i) => {
+            if (b === blockElement) index = i;
+        });
+        return index;
+    },
+
     /**
      * Setup drag and drop for files
      */
@@ -5672,7 +7097,7 @@ const Editor = {
         try {
             // First, capture empty blocks from DOM before Editor.js filters them
             const emptyBlockIds = this.captureEmptyBlockIds();
-            
+
             const data = await this.instance.save();
 
             // Ensure all blocks have IDs
@@ -5783,17 +7208,20 @@ const Editor = {
      * Editor.js strips empty blocks, so we mark them with a special invisible character
      */
     preserveSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'paragraph') {
-                const text = block.data?.text || '';
+        return blocks.map((block) => {
+            if (block.type === "paragraph") {
+                const text = block.data?.text || "";
                 // Check if paragraph is empty or only whitespace/br tags
-                const stripped = text.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, '').trim();
-                if (stripped === '' || stripped === '\u200B') {
+                const stripped = text
+                    .replace(/<br\s*\/?>/gi, "")
+                    .replace(/&nbsp;/gi, "")
+                    .trim();
+                if (stripped === "" || stripped === "\u200B") {
                     // Mark as spacer for storage
                     return {
                         ...block,
-                        type: 'spacer',
-                        data: { preserved: true }
+                        type: "spacer",
+                        data: { preserved: true },
                     };
                 }
             }
@@ -5805,13 +7233,13 @@ const Editor = {
      * Restore spacer markers back to empty paragraphs for editing
      */
     restoreSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'spacer' && block.data?.preserved) {
+        return blocks.map((block) => {
+            if (block.type === "spacer" && block.data?.preserved) {
                 // Restore as empty paragraph with zero-width space to prevent Editor.js from removing
                 return {
                     ...block,
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
             }
             return block;
@@ -5823,29 +7251,35 @@ const Editor = {
      */
     captureEmptyBlockIds() {
         const emptyBlocks = [];
-        const blockElements = this.container.querySelectorAll('.ce-block');
-        
+        const blockElements = this.container.querySelectorAll(".ce-block");
+
         blockElements.forEach((blockEl, index) => {
-            const contentEl = blockEl.querySelector('.ce-paragraph, [contenteditable="true"]');
+            const contentEl = blockEl.querySelector(
+                '.ce-paragraph, [contenteditable="true"]',
+            );
             if (contentEl) {
-                const text = contentEl.textContent?.trim() || '';
-                const innerHTML = contentEl.innerHTML?.trim() || '';
-                
+                const text = contentEl.textContent?.trim() || "";
+                const innerHTML = contentEl.innerHTML?.trim() || "";
+
                 // Check if the block is effectively empty
-                const isEmptyText = text === '' || text === '\u200B';
-                const isEmptyHtml = innerHTML === '' || innerHTML === '<br>' || innerHTML === '&nbsp;';
-                
+                const isEmptyText = text === "" || text === "\u200B";
+                const isEmptyHtml =
+                    innerHTML === "" ||
+                    innerHTML === "<br>" ||
+                    innerHTML === "&nbsp;";
+
                 if (isEmptyText || isEmptyHtml) {
-                    const blockId = blockEl.getAttribute('data-id') || blockEl.id;
+                    const blockId =
+                        blockEl.getAttribute("data-id") || blockEl.id;
                     emptyBlocks.push({
                         id: blockId,
                         index: index,
-                        type: 'paragraph'
+                        type: "paragraph",
                     });
                 }
             }
         });
-        
+
         return emptyBlocks;
     },
 
@@ -5858,30 +7292,32 @@ const Editor = {
         }
 
         // Build a set of existing block IDs
-        const existingIds = new Set(blocks.map(b => b.id));
-        
+        const existingIds = new Set(blocks.map((b) => b.id));
+
         // Create a new array with empty blocks reinserted
         const result = [...blocks];
-        
+
         // Sort by index to insert in correct order
-        const sortedEmpty = [...emptyBlockIds].sort((a, b) => a.index - b.index);
-        
+        const sortedEmpty = [...emptyBlockIds].sort(
+            (a, b) => a.index - b.index,
+        );
+
         for (const empty of sortedEmpty) {
             // Only reinsert if this block was stripped (not in existing blocks)
             if (!existingIds.has(empty.id)) {
                 // Create empty paragraph block
                 const emptyBlock = {
                     id: empty.id || Utils.generateId(),
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
-                
+
                 // Insert at the original position (capped to array length)
                 const insertIndex = Math.min(empty.index, result.length);
                 result.splice(insertIndex, 0, emptyBlock);
             }
         }
-        
+
         return result;
     },
 };
@@ -5890,7 +7326,7 @@ const Editor = {
 window.Editor = Editor;
 
 </script>
-        <script>
+    <script>
 /**
  * AI - Retrieval-Augmented Generation system for knowledge base queries
  * Supports OpenAI, Gemini, Ollama, and LM Studio
@@ -7100,7 +8536,7 @@ Never explain your process. Never list sources separately.`,
 window.AI = AI;
 
 </script>
-        <script>
+    <script>
 /**
  * AI Chat - User interface for AI-powered knowledge base queries
  * Floating search bar design inspired by Gemini/Siri
@@ -7244,8 +8680,8 @@ const AIChat = {
                     </button>
                     <button class="ai-action-btn" id="btn-ai-settings-mini" title="AI Settings">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </button>
                     <button class="ai-action-btn ai-send-btn" id="btn-ai-send-mini" title="Send" disabled>
@@ -7656,9 +9092,8 @@ const AIChat = {
             <div class="ai-compact-answer">
                 <div class="ai-answer-text">${this.formatMarkdown(compactAnswer)}</div>
                 ${sourcesHtml}
-                ${
-                    hasMore
-                        ? `
+                ${hasMore
+                ? `
                     <button class="ai-expand-btn" data-full="${btoa(encodeURIComponent(fullAnswer))}" onclick="AIChat.expandAnswer(this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 5v14M5 12h14"></path>
@@ -7666,8 +9101,8 @@ const AIChat = {
                         Show full answer
                     </button>
                 `
-                        : ""
-                }
+                : ""
+            }
             </div>
         `;
 
@@ -7825,14 +9260,14 @@ const AIChat = {
                         <select id="ai-provider">
                             <option value="">Select a provider...</option>
                             ${Object.entries(providers)
-                                .map(
-                                    ([key, p]) => `
+                    .map(
+                        ([key, p]) => `
                                 <option value="${key}" ${currentConfig.provider === key ? "selected" : ""}>
                                     ${p.name}
                                 </option>
                             `,
-                                )
-                                .join("")}
+                    )
+                    .join("")}
                         </select>
                         <small class="provider-hint" id="provider-hint"></small>
                     </div>
@@ -7863,11 +9298,10 @@ const AIChat = {
                     <div class="ai-index-section">
                         <label>Knowledge Base Index</label>
                         <div class="ai-index-status" id="ai-index-status">
-                            ${
-                                stats.isIndexed
-                                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
-                                    : `<span class="status-warning">Not indexed</span>`
-                            }
+                            ${stats.isIndexed
+                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
+                    : `<span class="status-warning">Not indexed</span>`
+                }
                         </div>
                         <button class="btn btn-outline" id="btn-reindex-now" style="margin-top: 8px;">
                             🔄 Re-index Content
@@ -8126,19 +9560,31 @@ const AIChat = {
 window.AIChat = AIChat;
 
 </script>
-        <script>
+    <script>
 /**
  * App - Main application entry point with vault integration
  */
 
 const App = {
     isInitialized: false,
+    
+    // Demo mode constants for testing
+    DEMO_MODE: false,
+    DEMO_PASSWORD: "demo-test-password-123",
 
     /**
      * Initialize the application
      */
     async init() {
         console.log("Initializing Aladin...");
+
+        // Check for demo mode via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        this.DEMO_MODE = urlParams.get("demo") === "true";
+        
+        if (this.DEMO_MODE) {
+            console.log("Demo mode enabled - using demo password");
+        }
 
         try {
             // Initialize modal system first
@@ -8170,6 +9616,12 @@ const App = {
      * Handle application startup - check for vault and show appropriate dialog
      */
     async handleStartup() {
+        // In demo mode, skip vault selection and initialize with demo data
+        if (this.DEMO_MODE) {
+            await this.initializeDemoMode();
+            return;
+        }
+
         const hasRemembered = Vault.hasRememberedVault();
         const vaultInfo = Vault.getRememberedVaultInfo();
         const hasPersistedHandle = await Vault.hasPersistedHandle();
@@ -8182,6 +9634,23 @@ const App = {
             // Show welcome dialog for new users
             await this.showWelcomeDialog();
         }
+    },
+
+    /**
+     * Initialize in demo mode for testing
+     * Bypasses vault creation/password prompt and uses demo credentials
+     */
+    async initializeDemoMode() {
+        console.log("Initializing demo mode...");
+        
+        // Set demo password in Vault for storage operations
+        Vault.password = this.DEMO_PASSWORD;
+        Vault.isLocked = false;
+        
+        // Initialize with null data (will use default content)
+        await this.initializeWithData(null);
+        
+        console.log("Demo mode initialized successfully");
     },
 
     /**
@@ -8247,21 +9716,20 @@ const App = {
             body: `
                 <div class="password-modal">
                     <p class="vault-name">Vault: <strong>${Utils.escapeHtml(vaultName)}</strong></p>
-                    ${
-                        !canAutoOpen && hasFileSystemAccess
-                            ? `
+                    ${!canAutoOpen && hasFileSystemAccess
+                    ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
                         For security, you'll need to select your vault file and enter your password.
                     </p>
                     `
-                            : canAutoOpen
-                              ? `
+                    : canAutoOpen
+                        ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--accent-hover); margin-bottom: 16px;">
                         ✓ Vault file remembered - just enter your password!
                     </p>
                     `
-                              : ""
-                    }
+                        : ""
+                }
                     <div class="form-group">
                         <label for="vault-password">Password</label>
                         <div class="password-input-wrapper">
@@ -8277,7 +9745,7 @@ const App = {
             footer: `
                 <button class="btn btn-primary" id="btn-unlock">${canAutoOpen ? "Unlock" : "Select & Unlock"}</button>
             `,
-            onClose: () => {},
+            onClose: () => { },
         });
 
         // Return a promise that resolves when action is taken
@@ -8440,7 +9908,7 @@ const App = {
                 <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
                 <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
             `,
-            onClose: () => {},
+            onClose: () => { },
         });
 
         return new Promise((resolve) => {
@@ -8534,6 +10002,9 @@ const App = {
                 await Storage.loadFromVault(vaultData);
             }
 
+            // Add vault controls to UI (creates theme-toggle)
+            this.addVaultControls();
+
             // Initialize sidebar
             Sidebar.init();
             console.log("Sidebar ready");
@@ -8544,9 +10015,6 @@ const App = {
 
             // Setup global functions
             this.setupGlobalFunctions();
-
-            // Add vault controls to UI
-            this.addVaultControls();
 
             // Initialize AI system
             await this.initializeAI();
@@ -8590,19 +10058,22 @@ const App = {
             const footerDiv = document.createElement("div");
             footerDiv.className = "sidebar-footer";
             footerDiv.innerHTML = `
+                <button class="sidebar-action-btn" id="theme-toggle" title="Toggle theme">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
                 <button class="sidebar-action-btn" id="btn-vault-settings" title="Vault Settings">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    <span>Settings</span>
                 </button>
                 <button class="sidebar-action-btn" id="btn-vault-lock" title="Lock Vault">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0110 0v4"></path>
                     </svg>
-                    <span>Lock</span>
                 </button>
             `;
             sidebar.appendChild(footerDiv);
@@ -8750,7 +10221,9 @@ const App = {
         console.log("  getAttachments() - Get all attachments");
         console.log("  lockVault() - Lock the vault");
         console.log("  getVaultStatus() - Get vault status");
-        console.log("  releaseVaultHandle() - Release file handle for cloud sync");
+        console.log(
+            "  releaseVaultHandle() - Release file handle for cloud sync",
+        );
     },
 };
 
@@ -8771,13 +10244,22 @@ window.addEventListener("beforeunload", async (e) => {
 
 // Save when tab becomes hidden (helps ensure data is saved before switching apps)
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && App.isInitialized && !Vault.isLocked) {
+    if (
+        document.visibilityState === "hidden" &&
+        App.isInitialized &&
+        !Vault.isLocked
+    ) {
         // User switched away - save data
-        Storage.saveToVault().then(() => {
-            console.log("Vault: Saved on visibility change");
-        }).catch(err => {
-            console.warn("Vault: Could not save on visibility change:", err);
-        });
+        Storage.saveToVault()
+            .then(() => {
+                console.log("Vault: Saved on visibility change");
+            })
+            .catch((err) => {
+                console.warn(
+                    "Vault: Could not save on visibility change:",
+                    err,
+                );
+            });
     }
 });
 
@@ -8785,7 +10267,7 @@ document.addEventListener("visibilitychange", () => {
 window.App = App;
 
 </script>
-    
+
 <script>
 // Portable mode detection and CORS helper
 (function() {
@@ -8798,4 +10280,5 @@ window.App = App;
 })();
 </script>
 </body>
+
 </html>

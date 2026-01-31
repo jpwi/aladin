@@ -5,11 +5,23 @@
 const App = {
     isInitialized: false,
 
+    // Demo mode constants for testing
+    DEMO_MODE: false,
+    DEMO_PASSWORD: "demo-test-password-123",
+
     /**
      * Initialize the application
      */
     async init() {
         console.log("Initializing Aladin...");
+
+        // Check for demo mode via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        this.DEMO_MODE = urlParams.get("demo") === "true";
+
+        if (this.DEMO_MODE) {
+            console.log("Demo mode enabled - using demo password");
+        }
 
         try {
             // Initialize modal system first
@@ -41,6 +53,12 @@ const App = {
      * Handle application startup - check for vault and show appropriate dialog
      */
     async handleStartup() {
+        // In demo mode, skip vault selection and initialize with demo data
+        if (this.DEMO_MODE) {
+            await this.initializeDemoMode();
+            return;
+        }
+
         const hasRemembered = Vault.hasRememberedVault();
         const vaultInfo = Vault.getRememberedVaultInfo();
         const hasPersistedHandle = await Vault.hasPersistedHandle();
@@ -53,6 +71,23 @@ const App = {
             // Show welcome dialog for new users
             await this.showWelcomeDialog();
         }
+    },
+
+    /**
+     * Initialize in demo mode for testing
+     * Bypasses vault creation/password prompt and uses demo credentials
+     */
+    async initializeDemoMode() {
+        console.log("Initializing demo mode...");
+
+        // Set demo password in Vault for storage operations
+        Vault.password = this.DEMO_PASSWORD;
+        Vault.isLocked = false;
+
+        // Initialize with null data (will use default content)
+        await this.initializeWithData(null);
+
+        console.log("Demo mode initialized successfully");
     },
 
     /**
