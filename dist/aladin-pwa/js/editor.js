@@ -396,7 +396,7 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            
+
             // Check for heading markdown shortcut (# followed by space)
             const headingMatch = text.match(/^(#{1,6})\s/);
             if (headingMatch) {
@@ -1067,7 +1067,6 @@ const Editor = {
         paragraphs.forEach(paragraph => {
             // Skip if all hashtags are already properly styled
             // Check if there are plain text hashtags (not inside hashtag-link elements)
-            const html = paragraph.innerHTML;
 
             // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
             // Skip elements that only have properly styled hashtag-links

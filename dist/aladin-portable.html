@@ -2857,13 +2857,22 @@ h6.ce-header {
 }
 
 </style>
+    <script>
+        // Apply saved theme immediately to prevent flash of wrong theme on password overlay
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
 </head>
 
 <body>
     <!-- Fallback mode banner (shown in Firefox/Safari) -->
     <div class="fallback-banner hidden" id="fallback-banner">
         <span class="fallback-message">
-            📁 Your browser doesn't support auto-save to file. 
+            📁 Your browser doesn't support auto-save to file.
             <button class="btn-link" id="fallback-save-btn">Save to file</button>
             to keep your changes.
         </span>
@@ -2918,7 +2927,8 @@ h6.ce-header {
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
     <!-- Editor.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
@@ -6900,7 +6910,7 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            
+
             // Check for heading markdown shortcut (# followed by space)
             const headingMatch = text.match(/^(#{1,6})\s/);
             if (headingMatch) {
@@ -7571,7 +7581,6 @@ const Editor = {
         paragraphs.forEach(paragraph => {
             // Skip if all hashtags are already properly styled
             // Check if there are plain text hashtags (not inside hashtag-link elements)
-            const html = paragraph.innerHTML;
 
             // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
             // Skip elements that only have properly styled hashtag-links

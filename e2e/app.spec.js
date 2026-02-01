@@ -395,12 +395,12 @@ test.describe('Hashtag Persistence', () => {
         // Wait for content to be saved
         await page.waitForTimeout(500);
 
-        // Verify hashtags are styled with hashtag-link class
-        const hashtagLinks = page.locator('.hashtag-link');
-        const count = await hashtagLinks.count();
+        // Verify hashtags are styled with hashtag-link class before reload
+        const hashtagLinksBefore = page.locator('.hashtag-link');
+        const countBefore = await hashtagLinksBefore.count();
 
         // Should have at least 1 hashtag link (from any existing content or our new ones)
-        expect(count).toBeGreaterThanOrEqual(0);
+        expect(countBefore).toBeGreaterThanOrEqual(1);
 
         // Reload the page
         await page.reload();
@@ -408,6 +408,13 @@ test.describe('Hashtag Persistence', () => {
 
         // Wait for hashtag styling to be applied
         await page.waitForTimeout(500);
+
+        // Verify hashtags are still styled after reload
+        const hashtagLinksAfter = page.locator('.hashtag-link');
+        const countAfter = await hashtagLinksAfter.count();
+        
+        // Should have at least 1 hashtag link after reload
+        expect(countAfter).toBeGreaterThanOrEqual(1);
 
         // Verify Editor is properly initialized
         const editorReady = await page.evaluate(() => {
