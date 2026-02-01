@@ -101,10 +101,10 @@ const Vault = {
      */
     showFallbackBanner() {
         if (this.hasFileSystemAccess) return;
-        
+
         const banner = document.getElementById('fallback-banner');
         const wasDismissed = sessionStorage.getItem('fallback-banner-dismissed');
-        
+
         if (banner && !wasDismissed) {
             banner.classList.remove('hidden');
         }
@@ -115,7 +115,7 @@ const Vault = {
      */
     updateFallbackBanner() {
         if (this.hasFileSystemAccess) return;
-        
+
         const banner = document.getElementById('fallback-banner');
         if (!banner) return;
 
@@ -420,7 +420,7 @@ const Vault = {
         await this.saveToIndexedDB(vaultData);
 
         this.rememberVault("knowledge-base.aladin");
-        
+
         // Show fallback banner to inform user about manual save
         this.showFallbackBanner();
 
@@ -500,7 +500,7 @@ const Vault = {
                     await this.saveToIndexedDB(data);
 
                     this.rememberVault(file.name);
-                    
+
                     // Show fallback banner to inform user about manual save
                     this.showFallbackBanner();
 

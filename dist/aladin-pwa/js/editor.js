@@ -322,7 +322,7 @@ const Editor = {
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
                 this.setupSlashCommands();
-                this.setupAtCommands();
+                this.setupStarCommands();
                 this.setupHashtagCommands();
                 this.setupDragDrop();
                 this.setupBlockDragHandles();
@@ -428,11 +428,11 @@ const Editor = {
     slashQuery: "",
     slashSelectedIndex: 0,
 
-    // Date command menu state to calculate relative dates
-    atMenu: null,
-    atSelectedIndex: 0,
-    atQuery: "",
-    atOptions: [
+    // Star (*) date command menu state to calculate relative dates
+    starMenu: null,
+    starSelectedIndex: 0,
+    starQuery: "",
+    starOptions: [
         {
             name: "today",
             getDate: function () { return Editor.formatDateISO(new Date()); }
@@ -772,70 +772,70 @@ const Editor = {
     },
 
     /**
-     * Setup at command menu
+     * Setup star (*) command menu for date insertion
      */
-    setupAtCommands() {
-        // Create at menu element
-        this.atMenu = document.createElement("div");
-        this.atMenu.className = "at-menu hidden";
-        this.atMenu.id = "at-menu";
-        document.body.appendChild(this.atMenu);
+    setupStarCommands() {
+        // Create star menu element
+        this.starMenu = document.createElement("div");
+        this.starMenu.className = "star-menu hidden";
+        this.starMenu.id = "star-menu";
+        document.body.appendChild(this.starMenu);
 
         // Listen for input in editor
         this.container.addEventListener("input", (e) => {
-            this.handleAtInput(e);
+            this.handleStarInput(e);
         });
 
-        // Handle keyboard navigation in at menu - attach to document with capture phase
+        // Handle keyboard navigation in star menu - attach to document with capture phase
         document.addEventListener("keydown", (e) => {
-            if (this.atMenu.classList.contains("hidden")) return;
+            if (this.starMenu.classList.contains("hidden")) return;
 
             if (e.key === "ArrowDown") {
                 e.preventDefault();
                 e.stopPropagation();
-                this.atSelectedIndex = Math.min(
-                    this.atSelectedIndex + 1,
-                    this.getFilteredAtOptions().length - 1,
+                this.starSelectedIndex = Math.min(
+                    this.starSelectedIndex + 1,
+                    this.getFilteredStarOptions().length - 1,
                 );
-                this.updateAtMenuSelection();
+                this.updateStarMenuSelection();
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 e.stopPropagation();
-                this.atSelectedIndex = Math.max(
-                    this.atSelectedIndex - 1,
+                this.starSelectedIndex = Math.max(
+                    this.starSelectedIndex - 1,
                     0,
                 );
-                this.updateAtMenuSelection();
+                this.updateStarMenuSelection();
             } else if (e.key === "Enter" || e.key === "Tab") {
-                const options = this.getFilteredAtOptions();
+                const options = this.getFilteredStarOptions();
                 if (options.length > 0) {
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
-                    this.executeAtCommand(options[this.atSelectedIndex]);
+                    this.executeStarCommand(options[this.starSelectedIndex]);
                 }
             } else if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
-                this.hideAtMenu();
+                this.hideStarMenu();
             }
         }, true); // Use capture phase
 
         // Hide menu when clicking outside
         document.addEventListener("click", (e) => {
             if (
-                !e.target.closest(".at-menu") &&
+                !e.target.closest(".star-menu") &&
                 !e.target.closest(".ce-block")
             ) {
-                this.hideAtMenu();
+                this.hideStarMenu();
             }
         });
     },
 
     /**
-     * Handle input for at commands
+     * Handle input for star (*) commands
      */
-    handleAtInput(e) {
+    handleStarInput(e) {
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
 
@@ -850,94 +850,94 @@ const Editor = {
 
         const text = paragraph.textContent || "";
 
-        // Check if text contains @
-        const atIndex = text.lastIndexOf("@");
-        if (atIndex !== -1) {
-            // Check if @ is at the end or followed by text
-            const textAfterAt = text.substring(atIndex + 1);
-            this.atQuery = textAfterAt.toLowerCase();
-            this.atSelectedIndex = 0;
-            this.showAtMenu(paragraph, atIndex);
+        // Check if text contains *
+        const starIndex = text.lastIndexOf("*");
+        if (starIndex !== -1) {
+            // Check if * is at the end or followed by text
+            const textAfterStar = text.substring(starIndex + 1);
+            this.starQuery = textAfterStar.toLowerCase();
+            this.starSelectedIndex = 0;
+            this.showStarMenu(paragraph, starIndex);
         } else {
-            this.hideAtMenu();
+            this.hideStarMenu();
         }
     },
 
     /**
      * Get filtered options based on query
      */
-    getFilteredAtOptions() {
-        if (!this.atQuery) return this.atOptions;
-        return this.atOptions.filter(
-            (opt) => opt.name.toLowerCase().includes(this.atQuery)
+    getFilteredStarOptions() {
+        if (!this.starQuery) return this.starOptions;
+        return this.starOptions.filter(
+            (opt) => opt.name.toLowerCase().includes(this.starQuery)
         );
     },
 
     /**
-     * Show at menu
+     * Show star menu
      */
-    showAtMenu(element, atIndex) {
-        const options = this.getFilteredAtOptions();
+    showStarMenu(element, starIndex) {
+        const options = this.getFilteredStarOptions();
         if (options.length === 0) {
-            this.hideAtMenu();
+            this.hideStarMenu();
             return;
         }
 
         // Build menu HTML
-        this.atMenu.innerHTML = options
+        this.starMenu.innerHTML = options
             .map(
                 (opt, index) => `
-            <div class="at-menu-item ${index === this.atSelectedIndex ? "selected" : ""}" 
+            <div class="star-menu-item ${index === this.starSelectedIndex ? "selected" : ""}" 
                  data-index="${index}">
-                <span class="at-menu-name">${opt.name}</span>
-                <span class="at-menu-date">${opt.getDate()}</span>
+                <span class="star-menu-name">${opt.name}</span>
+                <span class="star-menu-date">${opt.getDate()}</span>
             </div>
         `,
             )
             .join("");
 
         // Add click handlers - use mousedown to fire before blur
-        this.atMenu.querySelectorAll(".at-menu-item").forEach((item) => {
+        this.starMenu.querySelectorAll(".star-menu-item").forEach((item) => {
             item.addEventListener("mousedown", (e) => {
                 e.preventDefault(); // Prevent blur
                 e.stopPropagation();
                 const index = parseInt(item.dataset.index);
-                this.executeAtCommand(options[index]);
+                this.executeStarCommand(options[index]);
             });
         });
 
         // Position menu below the element
         const rect = element.getBoundingClientRect();
-        this.atMenu.style.top = `${rect.bottom + 5}px`;
-        this.atMenu.style.left = `${rect.left}px`;
-        this.atMenu.classList.remove("hidden");
+        this.starMenu.style.top = `${rect.bottom + 5}px`;
+        this.starMenu.style.left = `${rect.left}px`;
+        this.starMenu.classList.remove("hidden");
     },
 
     /**
-     * Hide at menu
+     * Hide star menu
      */
-    hideAtMenu() {
-        this.atMenu.classList.add("hidden");
-        this.atQuery = "";
+    hideStarMenu() {
+        this.starMenu.classList.add("hidden");
+        this.starQuery = "";
     },
 
     /**
      * Update selection highlight in menu
      */
-    updateAtMenuSelection() {
-        const items = this.atMenu.querySelectorAll(".at-menu-item");
+    updateStarMenuSelection() {
+        const items = this.starMenu.querySelectorAll(".star-menu-item");
         items.forEach((item, index) => {
             item.classList.toggle(
                 "selected",
-                index === this.atSelectedIndex,
+                index === this.starSelectedIndex,
             );
         });
     },
 
     /**
-     * Execute an at command
+     * Execute a star command (insert date)
      */
-    async executeAtCommand(option) {
+    async executeStarCommand(option) {
         const selection = window.getSelection();
         if (!selection.rangeCount) return;
 
@@ -951,14 +951,14 @@ const Editor = {
         if (!paragraph) return;
 
         const text = paragraph.textContent || "";
-        const atIndex = text.lastIndexOf("@");
+        const starIndex = text.lastIndexOf("*");
 
-        if (atIndex !== -1) {
+        if (starIndex !== -1) {
             // Get the date in YYYY-MM-DD format
             const dateValue = option.getDate();
 
-            // Replace @ and query with the date directly in the DOM
-            const newText = text.substring(0, atIndex) + dateValue;
+            // Replace * and query with the date directly in the DOM
+            const newText = text.substring(0, starIndex) + dateValue;
             paragraph.textContent = newText;
 
             // Move cursor to end of inserted date
@@ -973,7 +973,7 @@ const Editor = {
             }
         }
 
-        this.hideAtMenu();
+        this.hideStarMenu();
     },
 
     // ==========================================
@@ -1000,7 +1000,7 @@ const Editor = {
 
         this.allTags = Array.from(tags).sort();
         console.log('Loaded tags:', this.allTags);
-        
+
         // Style hashtags in DOM after editor renders
         setTimeout(() => this.styleHashtagsInDOM(), 100);
     },
@@ -1011,16 +1011,16 @@ const Editor = {
      */
     styleHashtagsInDOM() {
         const paragraphs = this.container.querySelectorAll('.ce-paragraph');
-        
+
         paragraphs.forEach(paragraph => {
             // Skip if all hashtags are already properly styled
             // Check if there are plain text hashtags (not inside hashtag-link elements)
             const html = paragraph.innerHTML;
-            
+
             // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
             // Skip elements that only have properly styled hashtag-links
             const hasUnstyledHashtags = this.hasUnstyledHashtags(paragraph);
-            
+
             if (hasUnstyledHashtags) {
                 this.processHashtagsInElement(paragraph);
             }
@@ -1039,7 +1039,7 @@ const Editor = {
                 return true;
             }
         }
-        
+
         // Get all text nodes that are NOT inside a hashtag-link or any <a> tag
         const walker = document.createTreeWalker(
             element,
@@ -1059,7 +1059,7 @@ const Editor = {
             },
             false
         );
-        
+
         let node;
         while (node = walker.nextNode()) {
             if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
@@ -1076,14 +1076,14 @@ const Editor = {
         // First, clean up any empty links (from previous bugs)
         const emptyLinks = element.querySelectorAll('a:empty');
         emptyLinks.forEach(link => link.remove());
-        
+
         // Remove links without meaningful text content
         element.querySelectorAll('a').forEach(link => {
             if (!link.textContent.trim()) {
                 link.remove();
             }
         });
-        
+
         // Fix any <a> tags that contain hashtags but don't have the hashtag-link class
         // This happens when Editor.js strips our custom class on save/load
         element.querySelectorAll('a').forEach(link => {
@@ -1096,7 +1096,7 @@ const Editor = {
                 link.href = '#';
             }
         });
-        
+
         // Now process only text nodes that are not inside existing hashtag-links
         const walker = document.createTreeWalker(
             element,
@@ -1116,7 +1116,7 @@ const Editor = {
             },
             false
         );
-        
+
         const textNodes = [];
         let node;
         while (node = walker.nextNode()) {
@@ -1125,26 +1125,26 @@ const Editor = {
                 textNodes.push(node);
             }
         }
-        
+
         // Process text nodes in reverse to avoid offset issues
         textNodes.reverse().forEach(textNode => {
             const text = textNode.textContent;
             const tagRegex = /#([a-zA-Z0-9_-]+)/g;
-            
+
             if (tagRegex.test(text)) {
                 // Reset regex
                 tagRegex.lastIndex = 0;
-                
+
                 const fragment = document.createDocumentFragment();
                 let lastIndex = 0;
                 let match;
-                
+
                 while ((match = tagRegex.exec(text)) !== null) {
                     // Add text before the hashtag
                     if (match.index > lastIndex) {
                         fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
                     }
-                    
+
                     // Create the hashtag link
                     const link = document.createElement('a');
                     link.href = '#';
@@ -1152,15 +1152,15 @@ const Editor = {
                     link.dataset.tag = match[1];
                     link.textContent = '#' + match[1];
                     fragment.appendChild(link);
-                    
+
                     lastIndex = match.index + match[0].length;
                 }
-                
+
                 // Add remaining text after last hashtag
                 if (lastIndex < text.length) {
                     fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
                 }
-                
+
                 textNode.parentNode.replaceChild(fragment, textNode);
             }
         });

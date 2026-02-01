@@ -859,10 +859,10 @@ h6.ce-header {
 }
 
 /* ========================================
-   At Command Menu
+   Star (*) Date Command Menu
    ======================================== */
 
-.at-menu {
+.star-menu {
     position: fixed;
     z-index: 1000;
     min-width: 200px;
@@ -872,14 +872,14 @@ h6.ce-header {
     border-radius: 10px;
     box-shadow: var(--shadow-lg);
     padding: 6px;
-    animation: atMenuIn 0.15s ease;
+    animation: starMenuIn 0.15s ease;
 }
 
-.at-menu.hidden {
+.star-menu.hidden {
     display: none;
 }
 
-@keyframes atMenuIn {
+@keyframes starMenuIn {
     from {
         opacity: 0;
         transform: translateY(-8px);
@@ -891,7 +891,7 @@ h6.ce-header {
     }
 }
 
-.at-menu-item {
+.star-menu-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -902,18 +902,18 @@ h6.ce-header {
     transition: background 0.15s ease;
 }
 
-.at-menu-item:hover,
-.at-menu-item.selected {
+.star-menu-item:hover,
+.star-menu-item.selected {
     background: var(--accent-light);
 }
 
-.at-menu-name {
+.star-menu-name {
     font-size: 14px;
     color: var(--text-primary);
     font-weight: 500;
 }
 
-.at-menu-date {
+.star-menu-date {
     font-size: 13px;
     color: var(--text-muted);
     font-family: var(--font-mono);
