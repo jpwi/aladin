@@ -311,6 +311,9 @@ const Editor = {
                         },
                     },
                 },
+                code: {
+                    class: CodeBlockTool,
+                },
             },
 
             onChange: Utils.debounce(async () => {
@@ -393,12 +396,13 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            const match = text.match(/^(#{1,6})\s/);
-
-            if (match) {
+            
+            // Check for heading markdown shortcut (# followed by space)
+            const headingMatch = text.match(/^(#{1,6})\s/);
+            if (headingMatch) {
                 e.preventDefault();
 
-                const level = match[1].length;
+                const level = headingMatch[1].length;
                 const headingText = text.replace(/^#{1,6}\s/, "");
 
                 // Get current block index
@@ -422,6 +426,38 @@ const Editor = {
                         true,
                     );
                 }
+                return;
+            }
+
+            // Check for code block markdown shortcut (``` followed by optional language)
+            const codeMatch = text.match(/^```(\w*)$/);
+            if (codeMatch) {
+                e.preventDefault();
+
+                const language = codeMatch[1] || 'javascript';
+
+                // Get current block index
+                const blocks = this.container.querySelectorAll(".ce-block");
+                let blockIndex = -1;
+                blocks.forEach((b, i) => {
+                    if (b === block) blockIndex = i;
+                });
+
+                if (blockIndex >= 0) {
+                    // Delete current block and insert code block
+                    await this.instance.blocks.delete(blockIndex);
+                    await this.instance.blocks.insert(
+                        "code",
+                        {
+                            code: "",
+                            language: language,
+                        },
+                        {},
+                        blockIndex,
+                        true,
+                    );
+                }
+                return;
             }
         });
     },
@@ -527,6 +563,13 @@ const Editor = {
             icon: "🖼",
             type: "image",
             data: {},
+        },
+        {
+            name: "Code Block",
+            shortcut: "/code",
+            icon: "</>",
+            type: "code",
+            data: { code: "", language: "javascript" },
         },
     ],
 
@@ -1802,7 +1845,7 @@ const Editor = {
                 e.preventDefault();
                 e.stopPropagation();
                 const options = this.getFilteredPeople();
-                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 && 
+                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 &&
                     !this.allPeople.some(p => p.toLowerCase() === this.mentionQuery.toLowerCase());
                 const totalOptions = options.length + (showCreateOption ? 1 : 0);
                 this.mentionSelectedIndex = Math.min(this.mentionSelectedIndex + 1, totalOptions - 1);
@@ -1815,7 +1858,7 @@ const Editor = {
             } else if (e.key === "Enter" || e.key === "Tab") {
                 const options = this.getFilteredPeople();
                 const query = this.mentionQuery;
-                const showCreateOption = query && query.length > 0 && 
+                const showCreateOption = query && query.length > 0 &&
                     !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
                 const totalOptions = options.length + (showCreateOption ? 1 : 0);
 
@@ -1913,7 +1956,7 @@ const Editor = {
         const filteredPeople = this.getFilteredPeople();
         const query = this.mentionQuery;
 
-        const showCreateOption = query && query.length > 0 && 
+        const showCreateOption = query && query.length > 0 &&
             !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
 
         if (filteredPeople.length === 0 && !showCreateOption) {
