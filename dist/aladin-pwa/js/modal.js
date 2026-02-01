@@ -285,6 +285,8 @@ const Modal = {
                         if (onSubmit) {
                             const result = await onSubmit(password);
                             if (result.success) {
+                                // Clear onClose to prevent cancelled resolution
+                                this.activeModal.onClose = null;
                                 this.hide();
                                 resolve({ success: true, password });
                             } else if (result.wrongPassword) {
@@ -295,6 +297,8 @@ const Modal = {
                                 passwordInput.focus();
                             }
                         } else {
+                            // Clear onClose to prevent cancelled resolution
+                            this.activeModal.onClose = null;
                             this.hide();
                             resolve({ success: true, password });
                         }
@@ -338,7 +342,10 @@ const Modal = {
                     <div class="create-vault-modal">
                         <p class="modal-description">
                             Create a password-protected vault to store your knowledge base.
-                            Choose a strong password - it cannot be recovered if lost.
+                            Choose a strong password you can remember.
+                        </p>
+                        <p class="modal-hint" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                            💡 <strong>Tip:</strong> After creating your vault, go to Settings → Security to set up a 24-word recovery phrase for backup access.
                         </p>
                         <div class="form-group">
                             <label for="new-password">Password</label>
@@ -485,10 +492,19 @@ const Modal = {
                     </div>
                     
                     <div class="settings-section">
+                        <h3>Security</h3>
+                        <div class="settings-actions">
+                            <button class="btn btn-secondary" id="btn-change-password">🔑 Change Password</button>
+                            <button class="btn btn-secondary" id="btn-recovery">
+                                ${callbacks.hasRecovery ? "🛡️ View Recovery Phrase" : "🛡️ Setup Recovery Phrase"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
                         <h3>Actions</h3>
                         <div class="settings-actions">
                             <button class="btn btn-secondary" id="btn-export">📤 Export Vault</button>
-                            <button class="btn btn-secondary" id="btn-change-password">🔑 Change Password</button>
                             <button class="btn btn-secondary" id="btn-lock">🔒 Lock Vault</button>
                         </div>
                     </div>
@@ -523,6 +539,11 @@ const Modal = {
                     callbacks.onChangePassword?.();
                 });
             document
+                .getElementById("btn-recovery")
+                ?.addEventListener("click", () => {
+                    callbacks.onRecovery?.();
+                });
+            document
                 .getElementById("btn-lock")
                 ?.addEventListener("click", () => {
                     this.hide();
@@ -534,6 +555,32 @@ const Modal = {
                     this.hide();
                 });
         }, 0);
+    },
+
+    /**
+     * Show recovery phrase modal
+     */
+    showRecoveryPhrase(phrase) {
+        return this.show({
+            title: "🛡️ Recovery Phrase",
+            allowClose: true,
+            body: `
+                <div class="recovery-modal">
+                    <p class="modal-description">
+                        This is your backup key. If you lose your password, these 24 words are the ONLY way to unlock your vault.
+                    </p>
+                    <div class="recovery-phrase-display">
+                        ${phrase.split(' ').map((word, i) => 
+                            `<div class="recovery-word"><span class="word-num">${i+1}</span> ${word}</div>`
+                        ).join('')}
+                    </div>
+                    <div class="warning-box">
+                        ⚠️ Write these words down on paper and store them safely. Do not share them.
+                    </div>
+                </div>
+            `,
+            footer: `<button class="btn btn-primary" onclick="Modal.hide()">I have saved it</button>`
+        });
     },
 
     /**

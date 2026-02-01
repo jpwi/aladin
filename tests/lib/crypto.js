@@ -1,24 +1,45 @@
 /**
  * Crypto - Encryption/Decryption using Web Crypto API
  * Uses AES-GCM with PBKDF2 key derivation for secure password-based encryption
+ * Testable version (exports as ES module)
  */
 
-const Crypto = {
+// BIP39 Wordlist (first 100 words for testing, full list in production)
+const TEST_WORDLIST = [
+    "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
+    "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
+    "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit",
+    "adult", "advance", "advice", "aerobic", "affair", "afford", "afraid", "again", "age", "agent",
+    "agree", "ahead", "aim", "air", "airport", "aisle", "alarm", "album", "alcohol", "alert",
+    "alien", "all", "alley", "allow", "almost", "alone", "alpha", "already", "also", "alter",
+    "always", "amateur", "amazing", "among", "amount", "amused", "analyst", "anchor", "ancient", "anger",
+    "angle", "angry", "animal", "ankle", "announce", "annual", "another", "answer", "antenna", "antique",
+    "anxiety", "any", "apart", "apology", "appear", "apple", "approve", "april", "arch", "arctic",
+    "area", "arena", "argue", "arm", "armed", "armor", "army", "around", "arrange", "arrest"
+];
+
+// Generate full 2048 word list for testing (use pattern)
+const WORDLIST = [];
+for (let i = 0; i < 2048; i++) {
+    WORDLIST.push(TEST_WORDLIST[i % TEST_WORDLIST.length] + (i >= TEST_WORDLIST.length ? Math.floor(i / TEST_WORDLIST.length) : ''));
+}
+
+export const Crypto = {
     // Encryption parameters
     SALT_LENGTH: 16,
     IV_LENGTH: 12,
     ITERATIONS: 100000,
     KEY_LENGTH: 256,
 
-    // NEW: Algorithms
+    // Algorithms
     ALGO_V1: "AES-GCM-256-PBKDF2",
-    ALGO_V2: "AES-GCM-256-KW", // Key Wrapping
+    ALGO_V2: "AES-GCM-256-KW",
 
     /**
      * Get the BIP39 wordlist
      */
     getWordlist() {
-        return window.WORDLIST || [];
+        return WORDLIST;
     },
 
     /**
@@ -81,7 +102,7 @@ const Crypto = {
     },
 
     /**
-     * Import a Master Key from raw bytes (for v1 migration or restoration)
+     * Import a Master Key from raw bytes
      */
     async importMasterKey(keyData) {
         return await crypto.subtle.importKey(
@@ -130,8 +151,6 @@ const Crypto = {
         const iv = this.generateIV();
         const wrappingKey = await this.deriveWrappingKey(password, salt);
 
-        // Export master key to raw format to encrypt it as data
-        // Note: Web Crypto wrapKey usually uses AES-KW, but we use AES-GCM for consistency
         const masterKeyRaw = await crypto.subtle.exportKey("raw", masterKey);
         
         const ciphertext = await crypto.subtle.encrypt(
@@ -172,42 +191,33 @@ const Crypto = {
     },
 
     /**
-     * Encrypt data using Envelope Encryption (v2) or fallback to v1
-     * options: { masterKey, recoveryPhrase, preserveKeySlots }
+     * Encrypt data using Envelope Encryption (v2)
      */
     async encrypt(data, password, options = {}) {
         const encoder = new TextEncoder();
         const dataBuffer = encoder.encode(JSON.stringify(data));
         const iv = this.generateIV();
         
-        // Get or generate Master Key
         let masterKey = options.masterKey;
         if (!masterKey) {
             masterKey = await this.generateMasterKey();
         }
 
-        // Encrypt data with Master Key
         const ciphertext = await crypto.subtle.encrypt(
             { name: "AES-GCM", iv: iv },
             masterKey,
             dataBuffer,
         );
 
-        // Prepare key slots
         const keySlots = [];
 
-        // 1. Password Slot (Always create new)
         const passwordSlot = await this.wrapMasterKey(masterKey, password, "password");
         keySlots.push(passwordSlot);
 
-        // 2. Recovery Phrase Slot
         if (options.recoveryPhrase) {
-            // New recovery phrase provided - create slot
             const recoverySlot = await this.wrapMasterKey(masterKey, options.recoveryPhrase, "recovery");
             keySlots.push(recoverySlot);
         } else if (options.keySlots) {
-            // Preserve existing valid recovery slots
-            // (We implicitly trust them if we are re-encrypting with the SAME master key)
             const existingRecoveryIds = options.keySlots.filter(s => s.type === "recovery");
             keySlots.push(...existingRecoveryIds);
         }
@@ -223,15 +233,12 @@ const Crypto = {
 
     /**
      * Decrypt data handling both v1 and v2 formats
-     * Returns: { data, masterKey, usedSlotType }
      */
     async decrypt(encryptedData, password) {
-        // Handle v1 (Legacy)
         if (!encryptedData.version || encryptedData.version === "1.0") {
             return this.decryptV1(encryptedData, password);
         }
 
-        // Handle v2 (Envelope)
         if (encryptedData.version === "2.0") {
             return this.decryptV2(encryptedData, password);
         }
@@ -240,7 +247,7 @@ const Crypto = {
     },
 
     /**
-     * Decrypt V1 format and upgrade result structure
+     * Decrypt V1 format
      */
     async decryptV1(encryptedData, password) {
         try {
@@ -248,7 +255,6 @@ const Crypto = {
             const iv = this.base64ToArrayBuffer(encryptedData.iv);
             const ciphertext = this.base64ToArrayBuffer(encryptedData.ciphertext);
 
-            // In v1, we derive the key directly from password
             const key = await this.deriveKeyLegacy(password, salt);
 
             const decryptedBuffer = await crypto.subtle.decrypt(
@@ -261,15 +267,13 @@ const Crypto = {
             const decryptedText = decoder.decode(decryptedBuffer);
             const data = JSON.parse(decryptedText);
 
-            // For V1→V2 migration: generate a fresh random master key
-            // This is more secure than reusing the derived key
             const newMasterKey = await this.generateMasterKey();
             
             return {
                 data: data,
                 masterKey: newMasterKey,
-                usedSlotType: "password", // v1 is always password
-                isV1Migration: true // Flag to indicate V2 upgrade needed on save
+                usedSlotType: "password",
+                isV1Migration: true
             };
 
         } catch (error) {
@@ -288,12 +292,11 @@ const Crypto = {
         let masterKey = null;
         let usedSlotType = null;
 
-        // Try to unwrap from each slot matching the password/phrase
         for (const slot of keySlots) {
             try {
                 masterKey = await this.unwrapMasterKey(slot, password);
                 usedSlotType = slot.type;
-                break; // Success!
+                break;
             } catch (e) {
                 // Continue to next slot
             }
@@ -303,7 +306,6 @@ const Crypto = {
             throw new Error("Decryption failed. Wrong password or recovery phrase.");
         }
 
-        // Decrypt data with Master Key
         try {
             const decryptedBuffer = await crypto.subtle.decrypt(
                 { name: "AES-GCM", iv: iv },
@@ -319,7 +321,7 @@ const Crypto = {
                 data: data,
                 masterKey: masterKey,
                 usedSlotType: usedSlotType,
-                keySlots: keySlots // Return slots so we can preserve them
+                keySlots: keySlots
             };
         } catch (e) {
             throw new Error("Data decryption failed (corrupt data?)");
@@ -328,7 +330,6 @@ const Crypto = {
 
     /**
      * Legacy Key Derivation (for V1 support)
-     * Note: extractable=true so we can migrate to V2 format
      */
     async deriveKeyLegacy(password, salt) {
         const encoder = new TextEncoder();
@@ -351,7 +352,7 @@ const Crypto = {
             },
             keyMaterial,
             { name: "AES-GCM", length: this.KEY_LENGTH },
-            true, // extractable for V2 migration
+            true,
             ["encrypt", "decrypt"],
         );
     },
@@ -394,17 +395,13 @@ const Crypto = {
     
     /**
      * Calculate password strength score (0-4)
-
      */
     getPasswordStrength(password) {
         let score = 0;
         if (!password) return score;
 
-        // Length checks
         if (password.length >= 8) score++;
         if (password.length >= 12) score++;
-
-        // Character variety checks
         if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
         if (/\d/.test(password)) score++;
         if (/[^a-zA-Z\d]/.test(password)) score++;
@@ -420,9 +417,3 @@ const Crypto = {
         return labels[score] || labels[0];
     },
 };
-
-// Freeze to prevent modifications
-Object.freeze(Crypto);
-
-// Make globally available
-window.Crypto = Crypto;

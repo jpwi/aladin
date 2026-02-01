@@ -2877,6 +2877,62 @@ h6.ce-header {
     }
 }
 
+/* ========================================
+   Recovery Phrase
+   ======================================== */
+
+.recovery-phrase-display {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.recovery-word {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    padding: 4px;
+}
+
+.recovery-word .word-num {
+    color: var(--text-muted);
+    user-select: none;
+    width: 24px;
+    text-align: right;
+}
+
+.warning-box {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    color: #f57f17;
+    padding: var(--spacing-md);
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+:root[data-theme="dark"] .warning-box {
+    background: #3e2723;
+    border-color: #5d4037;
+    color: #ffcc80;
+}
+
+@media (max-width: 600px) {
+    .recovery-phrase-display {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 </style>
 
 <script>
@@ -3141,6 +3197,9 @@ Object.freeze(Utils);
 
 </script>
     <script>
+﻿const WORDLIST = ["abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse","access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act","action","actor","actress","actual","adapt","add","addict","address","adjust","admit","adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent","agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert","alien","all","alley","allow","almost","alone","alpha","already","also","alter","always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger","angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique","anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic","area","arena","argue","arm","armed","armor","army","around","arrange","arrest","arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset","assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction","audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake","aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge","bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain","barrel","base","basic","basket","battle","beach","bean","beauty","because","become","beef","before","begin","behave","behind","believe","below","belt","bench","benefit","best","betray","better","between","beyond","bicycle","bid","bike","bind","biology","bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless","blind","blood","blossom","blouse","blue","blur","blush","board","boat","body","boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss","bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread","breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze","broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb","bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy","butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call","calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas","canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry","cart","case","cash","casino","castle","casual","cat","catalog","catch","category","cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century","cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase","chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child","chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle","citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk","clever","click","client","cliff","climb","clinic","clip","clock","clog","close","cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut","code","coffee","coil","coin","collect","color","column","combine","come","comfort","comic","common","company","concert","conduct","confirm","congress","connect","consider","control","convince","cook","cool","copper","copy","coral","core","corn","correct","cost","cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle","craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek","crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial","cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup","cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad","damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal","debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense","define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny","depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk","despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond","diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur","direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance","divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain","donate","donkey","donor","door","dose","double","dove","draft","dragon","drama","drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop","drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf","dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo","ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow","elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody","embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless","endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough","enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip","era","erase","erode","erosion","error","erupt","escape","essay","essence","estate","eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange","excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit","exotic","expand","expect","expire","explain","expose","express","extend","extra","eye","eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame","family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father","fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female","fence","festival","fetch","fever","few","fiber","fiction","field","figure","file","film","filter","final","find","fine","finger","finish","fire","firm","first","fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor","flee","flight","flip","float","flock","floor","flower","fluid","flush","fly","foam","focus","fog","foil","fold","follow","food","foot","force","forest","forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile","frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen","fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy","gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp","gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture","ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance","glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue","goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown","grab","grace","grain","grant","grape","grass","gravity","great","green","grid","grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt","guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy","harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health","heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden","high","hill","hint","hip","hire","history","hobby","hockey","hold","hole","holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital","host","hotel","hour","hover","hub","huge","human","humble","humor","hundred","hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea","identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune","impact","impose","improve","impulse","inch","include","income","increase","index","indicate","indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury","inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install","intact","interest","into","invest","invite","involve","iron","island","isolate","issue","item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel","job","join","joke","journey","joy","judge","juice","jump","jungle","junior","junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney","kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife","knock","know","lab","label","labor","ladder","lady","lake","lamp","language","laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit","layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal","legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level","liar","liberty","library","license","life","lift","light","like","limb","limit","link","lion","liquid","list","little","live","lizard","load","loan","lobster","local","lock","logic","lonely","long","loop","lottery","loud","lounge","love","loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad","magic","magnet","maid","mail","main","major","make","mammal","man","manage","mandate","mango","mansion","manual","maple","marble","march","margin","marine","market","marriage","mask","mass","master","match","material","math","matrix","matter","maximum","maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt","member","memory","mention","menu","mercy","merge","merit","merry","mesh","message","metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor","minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile","model","modify","mom","moment","monitor","monkey","monster","month","moon","moral","more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie","much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual","myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature","near","neck","need","negative","neglect","neither","nephew","nerve","nest","net","network","neutral","never","news","next","nice","night","noble","noise","nominee","noodle","normal","north","nose","notable","note","nothing","notice","novel","now","nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe","obtain","obvious","occur","ocean","october","odor","off","offer","office","often","oil","okay","old","olive","olympic","omit","once","one","onion","online","only","open","opera","opinion","oppose","option","orange","orbit","orchard","order","ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output","outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact","paddle","page","pair","palace","palm","panda","panel","panic","panther","paper","parade","parent","park","parrot","party","pass","patch","path","patient","patrol","pattern","pause","pave","payment","peace","peanut","pear","peasant","pelican","pen","penalty","pencil","people","pepper","perfect","permit","person","pet","phone","photo","phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot","pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate","play","please","pledge","pluck","plug","plunge","poem","poet","point","polar","pole","police","pond","pony","pool","popular","portion","position","possible","post","potato","pottery","poverty","powder","power","practice","praise","predict","prefer","prepare","present","pretty","prevent","price","pride","primary","print","priority","prison","private","prize","problem","process","produce","profit","program","project","promote","proof","property","prosper","protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin","punch","pupil","puppy","purchase","purity","purpose","purse","push","put","puzzle","pyramid","quality","quantum","quarter","question","quick","quit","quiz","quote","rabbit","raccoon","race","rack","radar","radio","rail","rain","raise","rally","ramp","ranch","random","range","rapid","rare","rate","rather","raven","raw","razor","ready","real","reason","rebel","rebuild","recall","receive","recipe","record","recycle","reduce","reflect","reform","refuse","region","regret","regular","reject","relax","release","relief","rely","remain","remember","remind","remove","render","renew","rent","reopen","repair","repeat","replace","report","require","rescue","resemble","resist","resource","response","result","retire","retreat","return","reunion","reveal","review","reward","rhythm","rib","ribbon","rice","rich","ride","ridge","rifle","right","rigid","ring","riot","ripple","risk","ritual","rival","river","road","roast","robot","robust","rocket","romance","roof","rookie","room","rose","rotate","rough","round","route","royal","rubber","rude","rug","rule","run","runway","rural","sad","saddle","sadness","safe","sail","salad","salmon","salon","salt","salute","same","sample","sand","satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare","scatter","scene","scheme","school","science","scissors","scorpion","scout","scrap","screen","script","scrub","sea","search","season","seat","second","secret","section","security","seed","seek","segment","select","sell","seminar","senior","sense","sentence","series","service","session","settle","setup","seven","shadow","shaft","shallow","share","shed","shell","sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot","shop","short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side","siege","sight","sign","silent","silk","silly","silver","similar","simple","since","sing","siren","sister","situate","six","size","skate","sketch","ski","skill","skin","skirt","skull","slab","slam","sleep","slender","slice","slide","slight","slim","slogan","slot","slow","slush","small","smart","smile","smoke","smooth","snack","snake","snap","sniff","snow","soap","soccer","social","sock","soda","soft","solar","soldier","solid","solution","solve","someone","song","soon","sorry","sort","soul","sound","soup","source","south","space","spare","spatial","spawn","speak","special","speed","spell","spend","sphere","spice","spider","spike","spin","spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread","spring","spy","square","squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp","stand","start","state","stay","steak","steel","stem","step","stereo","stick","still","sting","stock","stomach","stone","stool","story","stove","strategy","street","strike","strong","struggle","student","stuff","stumble","style","subject","submit","subway","success","such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny","sunset","super","supply","supreme","sure","surface","surge","surprise","surround","survey","suspect","sustain","swallow","swamp","swap","swarm","swear","sweet","swift","swim","swing","switch","sword","symbol","symptom","syrup","system","table","tackle","tag","tail","talent","talk","tank","tape","target","task","taste","tattoo","taxi","teach","team","tell","ten","tenant","tennis","tent","term","test","text","thank","that","theme","then","theory","there","they","thing","this","thought","three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber","time","tiny","tip","tired","tissue","title","toast","tobacco","today","toddler","toe","together","toilet","token","tomato","tomorrow","tone","tongue","tonight","tool","tooth","top","topic","topple","torch","tornado","tortoise","toss","total","tourist","toward","tower","town","toy","track","trade","traffic","tragic","train","transfer","trap","trash","travel","tray","treat","tree","trend","trial","tribe","trick","trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet","trust","truth","try","tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle","twelve","twenty","twice","twin","twist","two","type","typical","ugly","umbrella","unable","unaware","uncle","uncover","under","undo","unfair","unfold","unhappy","uniform","unique","unit","universe","unknown","unlock","until","unusual","unveil","update","upgrade","uphold","upon","upper","upset","urban","urge","usage","use","used","useful","useless","usual","utility","vacant","vacuum","vague","valid","valley","valve","van","vanish","vapor","various","vast","vault","vehicle","velvet","vendor","venture","venue","verb","verify","version","very","vessel","veteran","viable","vibrant","vicious","victory","video","view","village","vintage","violin","virtual","virus","visa","visit","visual","vital","vivid","vocal","voice","void","volcano","volume","vote","voyage","wage","wagon","wait","walk","wall","walnut","want","warfare","warm","warrior","wash","wasp","waste","water","wave","way","wealth","weapon","wear","weasel","weather","web","wedding","weekend","weird","welcome","west","wet","whale","what","wheat","wheel","when","where","whip","whisper","wide","width","wife","wild","will","win","window","wine","wing","wink","winner","winter","wire","wisdom","wise","wish","witness","wolf","woman","wonder","wood","wool","word","work","world","worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year","yellow","you","young","youth","zebra","zero","zone","zoo"]; window.WORDLIST = WORDLIST;
+</script>
+    <script>
 /**
  * Crypto - Encryption/Decryption using Web Crypto API
  * Uses AES-GCM with PBKDF2 key derivation for secure password-based encryption
@@ -3152,6 +3211,48 @@ const Crypto = {
     IV_LENGTH: 12,
     ITERATIONS: 100000,
     KEY_LENGTH: 256,
+
+    // NEW: Algorithms
+    ALGO_V1: "AES-GCM-256-PBKDF2",
+    ALGO_V2: "AES-GCM-256-KW", // Key Wrapping
+
+    /**
+     * Get the BIP39 wordlist
+     */
+    getWordlist() {
+        return window.WORDLIST || [];
+    },
+
+    /**
+     * Generate a 24-word recovery phrase (BIP39 compatible entropy)
+     */
+    async generateRecoveryPhrase() {
+        const wordlist = this.getWordlist();
+        if (!wordlist.length) throw new Error("Wordlist not loaded");
+
+        // 256 bits of entropy
+        const entropy = crypto.getRandomValues(new Uint8Array(32));
+        
+        // Checksum: SHA-256 first 8 bits
+        const hashBuffer = await crypto.subtle.digest("SHA-256", entropy);
+        const hashArray = new Uint8Array(hashBuffer);
+        const checksumByte = hashArray[0];
+
+        // Convert to binary string
+        let bits = "";
+        for (let i = 0; i < 32; i++) {
+            bits += entropy[i].toString(2).padStart(8, "0");
+        }
+        bits += checksumByte.toString(2).padStart(8, "0").substring(0, 8);
+
+        const phrase = [];
+        for (let i = 0; i < 24; i++) {
+            const index = parseInt(bits.substring(i * 11, (i + 1) * 11), 2);
+            phrase.push(wordlist[index]);
+        }
+
+        return phrase.join(" ");
+    },
 
     /**
      * Generate a random salt
@@ -3168,13 +3269,39 @@ const Crypto = {
     },
 
     /**
-     * Derive a cryptographic key from a password using PBKDF2
+     * Generate a random Master Key
      */
-    async deriveKey(password, salt) {
+    async generateMasterKey() {
+        return await crypto.subtle.generateKey(
+            {
+                name: "AES-GCM",
+                length: this.KEY_LENGTH,
+            },
+            true,
+            ["encrypt", "decrypt"]
+        );
+    },
+
+    /**
+     * Import a Master Key from raw bytes (for v1 migration or restoration)
+     */
+    async importMasterKey(keyData) {
+        return await crypto.subtle.importKey(
+            "raw",
+            keyData,
+            { name: "AES-GCM", length: this.KEY_LENGTH },
+            true,
+            ["encrypt", "decrypt"]
+        );
+    },
+
+    /**
+     * Derive a wrapping key from a password/phrase
+     */
+    async deriveWrappingKey(password, salt) {
         const encoder = new TextEncoder();
         const passwordBuffer = encoder.encode(password);
 
-        // Import password as raw key material
         const keyMaterial = await crypto.subtle.importKey(
             "raw",
             passwordBuffer,
@@ -3183,7 +3310,6 @@ const Crypto = {
             ["deriveKey"],
         );
 
-        // Derive the actual encryption key
         return await crypto.subtle.deriveKey(
             {
                 name: "PBKDF2",
@@ -3194,50 +3320,138 @@ const Crypto = {
             keyMaterial,
             { name: "AES-GCM", length: this.KEY_LENGTH },
             false,
-            ["encrypt", "decrypt"],
+            ["encrypt", "decrypt", "wrapKey", "unwrapKey"],
         );
     },
 
     /**
-     * Encrypt data with a password
-     * Returns: { salt, iv, ciphertext } as base64 encoded strings
+     * Wrap (encrypt) the master key with a password/phrase
      */
-    async encrypt(data, password) {
-        const encoder = new TextEncoder();
-        const dataBuffer = encoder.encode(JSON.stringify(data));
-
+    async wrapMasterKey(masterKey, password, type = "password") {
         const salt = this.generateSalt();
         const iv = this.generateIV();
-        const key = await this.deriveKey(password, salt);
+        const wrappingKey = await this.deriveWrappingKey(password, salt);
 
+        // Export master key to raw format to encrypt it as data
+        // Note: Web Crypto wrapKey usually uses AES-KW, but we use AES-GCM for consistency
+        const masterKeyRaw = await crypto.subtle.exportKey("raw", masterKey);
+        
         const ciphertext = await crypto.subtle.encrypt(
             { name: "AES-GCM", iv: iv },
-            key,
-            dataBuffer,
+            wrappingKey,
+            masterKeyRaw
         );
 
         return {
+            type: type,
             salt: this.arrayBufferToBase64(salt),
             iv: this.arrayBufferToBase64(iv),
-            ciphertext: this.arrayBufferToBase64(ciphertext),
-            version: "1.0",
-            algorithm: "AES-GCM-256-PBKDF2",
+            ciphertext: this.arrayBufferToBase64(ciphertext)
         };
     },
 
     /**
-     * Decrypt data with a password
-     * Returns: decrypted data object
+     * Unwrap (decrypt) the master key
+     */
+    async unwrapMasterKey(slot, password) {
+        const salt = this.base64ToArrayBuffer(slot.salt);
+        const iv = this.base64ToArrayBuffer(slot.iv);
+        const ciphertext = this.base64ToArrayBuffer(slot.ciphertext);
+
+        const wrappingKey = await this.deriveWrappingKey(password, salt);
+
+        try {
+            const masterKeyRaw = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                wrappingKey,
+                ciphertext
+            );
+
+            return await this.importMasterKey(masterKeyRaw);
+        } catch (e) {
+            throw new Error("Failed to unwrap key");
+        }
+    },
+
+    /**
+     * Encrypt data using Envelope Encryption (v2) or fallback to v1
+     * options: { masterKey, recoveryPhrase, preserveKeySlots }
+     */
+    async encrypt(data, password, options = {}) {
+        const encoder = new TextEncoder();
+        const dataBuffer = encoder.encode(JSON.stringify(data));
+        const iv = this.generateIV();
+        
+        // Get or generate Master Key
+        let masterKey = options.masterKey;
+        if (!masterKey) {
+            masterKey = await this.generateMasterKey();
+        }
+
+        // Encrypt data with Master Key
+        const ciphertext = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            masterKey,
+            dataBuffer,
+        );
+
+        // Prepare key slots
+        const keySlots = [];
+
+        // 1. Password Slot (Always create new)
+        const passwordSlot = await this.wrapMasterKey(masterKey, password, "password");
+        keySlots.push(passwordSlot);
+
+        // 2. Recovery Phrase Slot
+        if (options.recoveryPhrase) {
+            // New recovery phrase provided - create slot
+            const recoverySlot = await this.wrapMasterKey(masterKey, options.recoveryPhrase, "recovery");
+            keySlots.push(recoverySlot);
+        } else if (options.keySlots) {
+            // Preserve existing valid recovery slots
+            // (We implicitly trust them if we are re-encrypting with the SAME master key)
+            const existingRecoveryIds = options.keySlots.filter(s => s.type === "recovery");
+            keySlots.push(...existingRecoveryIds);
+        }
+
+        return {
+            version: "2.0",
+            algorithm: this.ALGO_V2,
+            iv: this.arrayBufferToBase64(iv),
+            ciphertext: this.arrayBufferToBase64(ciphertext),
+            keySlots: keySlots
+        };
+    },
+
+    /**
+     * Decrypt data handling both v1 and v2 formats
+     * Returns: { data, masterKey, usedSlotType }
      */
     async decrypt(encryptedData, password) {
+        // Handle v1 (Legacy)
+        if (!encryptedData.version || encryptedData.version === "1.0") {
+            return this.decryptV1(encryptedData, password);
+        }
+
+        // Handle v2 (Envelope)
+        if (encryptedData.version === "2.0") {
+            return this.decryptV2(encryptedData, password);
+        }
+
+        throw new Error(`Unknown version: ${encryptedData.version}`);
+    },
+
+    /**
+     * Decrypt V1 format and upgrade result structure
+     */
+    async decryptV1(encryptedData, password) {
         try {
             const salt = this.base64ToArrayBuffer(encryptedData.salt);
             const iv = this.base64ToArrayBuffer(encryptedData.iv);
-            const ciphertext = this.base64ToArrayBuffer(
-                encryptedData.ciphertext,
-            );
+            const ciphertext = this.base64ToArrayBuffer(encryptedData.ciphertext);
 
-            const key = await this.deriveKey(password, salt);
+            // In v1, we derive the key directly from password
+            const key = await this.deriveKeyLegacy(password, salt);
 
             const decryptedBuffer = await crypto.subtle.decrypt(
                 { name: "AES-GCM", iv: iv },
@@ -3247,11 +3461,101 @@ const Crypto = {
 
             const decoder = new TextDecoder();
             const decryptedText = decoder.decode(decryptedBuffer);
-            return JSON.parse(decryptedText);
+            const data = JSON.parse(decryptedText);
+
+            // For V1→V2 migration: generate a fresh random master key
+            // This is more secure than reusing the derived key
+            const newMasterKey = await this.generateMasterKey();
+            
+            return {
+                data: data,
+                masterKey: newMasterKey,
+                usedSlotType: "password", // v1 is always password
+                isV1Migration: true // Flag to indicate V2 upgrade needed on save
+            };
+
         } catch (error) {
-            // Decryption failed - likely wrong password
             throw new Error("Decryption failed. Wrong password?");
         }
+    },
+
+    /**
+     * Decrypt V2 format
+     */
+    async decryptV2(encryptedData, password) {
+        const { keySlots, iv: ivB64, ciphertext: cipherB64 } = encryptedData;
+        const iv = this.base64ToArrayBuffer(ivB64);
+        const ciphertext = this.base64ToArrayBuffer(cipherB64);
+
+        let masterKey = null;
+        let usedSlotType = null;
+
+        // Try to unwrap from each slot matching the password/phrase
+        for (const slot of keySlots) {
+            try {
+                masterKey = await this.unwrapMasterKey(slot, password);
+                usedSlotType = slot.type;
+                break; // Success!
+            } catch (e) {
+                // Continue to next slot
+            }
+        }
+
+        if (!masterKey) {
+            throw new Error("Decryption failed. Wrong password or recovery phrase.");
+        }
+
+        // Decrypt data with Master Key
+        try {
+            const decryptedBuffer = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                masterKey,
+                ciphertext,
+            );
+
+            const decoder = new TextDecoder();
+            const decryptedText = decoder.decode(decryptedBuffer);
+            const data = JSON.parse(decryptedText);
+
+            return {
+                data: data,
+                masterKey: masterKey,
+                usedSlotType: usedSlotType,
+                keySlots: keySlots // Return slots so we can preserve them
+            };
+        } catch (e) {
+            throw new Error("Data decryption failed (corrupt data?)");
+        }
+    },
+
+    /**
+     * Legacy Key Derivation (for V1 support)
+     * Note: extractable=true so we can migrate to V2 format
+     */
+    async deriveKeyLegacy(password, salt) {
+        const encoder = new TextEncoder();
+        const passwordBuffer = encoder.encode(password);
+
+        const keyMaterial = await crypto.subtle.importKey(
+            "raw",
+            passwordBuffer,
+            "PBKDF2",
+            false,
+            ["deriveKey"],
+        );
+
+        return await crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: this.ITERATIONS,
+                hash: "SHA-256",
+            },
+            keyMaterial,
+            { name: "AES-GCM", length: this.KEY_LENGTH },
+            true, // extractable for V2 migration
+            ["encrypt", "decrypt"],
+        );
     },
 
     /**
@@ -3289,9 +3593,10 @@ const Crypto = {
         }
         return bytes.buffer;
     },
-
+    
     /**
-     * Generate a password strength score (0-4)
+     * Calculate password strength score (0-4)
+
      */
     getPasswordStrength(password) {
         let score = 0;
@@ -3335,6 +3640,8 @@ const Vault = {
     // Current state
     fileHandle: null,
     password: null,
+    masterKey: null,
+    keySlots: [],
     isLocked: true,
     lastSaveTime: null,
     isDirty: false,
@@ -3650,10 +3957,13 @@ const Vault = {
             const text = await file.text();
             const encrypted = JSON.parse(text);
 
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
+            const data = decrypted.data;
 
             this.fileHandle = savedHandle;
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
             // Update last opened time
@@ -3696,6 +4006,8 @@ const Vault = {
 
             this.fileHandle = handle;
             this.password = password;
+            this.masterKey = await Crypto.generateMasterKey();
+            this.keySlots = [];
             this.isLocked = false;
 
             // Create initial vault data
@@ -3724,13 +4036,17 @@ const Vault = {
      */
     async createNewVaultFallback(password, initialData = null) {
         this.password = password;
+        this.masterKey = await Crypto.generateMasterKey();
+        this.keySlots = [];
         this.isLocked = false;
 
         // Create initial vault data
         const vaultData = this.createVaultStructure(initialData);
 
         // Encrypt
-        const encrypted = await Crypto.encrypt(vaultData, password);
+        const encrypted = await Crypto.encrypt(vaultData, password, { 
+            masterKey: this.masterKey 
+        });
         const json = JSON.stringify(encrypted, null, 2);
 
         // Download
@@ -3777,9 +4093,13 @@ const Vault = {
             const text = await file.text();
             const encrypted = JSON.parse(text);
 
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
+            const data = decrypted.data;
 
+            this.fileHandle = handle;
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
             // Remember this vault and persist handle
@@ -3819,9 +4139,12 @@ const Vault = {
                 try {
                     const text = await file.text();
                     const encrypted = JSON.parse(text);
-                    const data = await Crypto.decrypt(encrypted, password);
+                    const decrypted = await Crypto.decrypt(encrypted, password);
+                    const data = decrypted.data;
 
                     this.password = password;
+                    this.masterKey = decrypted.masterKey;
+                    this.keySlots = decrypted.keySlots || [];
                     this.isLocked = false;
 
                     // Store in IndexedDB as working copy
@@ -3884,12 +4207,22 @@ const Vault = {
      * Uses atomic write to prevent file locking issues with cloud sync (OneDrive, Dropbox, iCloud)
      * Includes exponential backoff retry for cloud sync locked files
      */
-    async saveToFile(data) {
+    async saveToFile(data, options = {}) {
         if (!this.fileHandle) {
             throw new Error("No file handle");
         }
 
-        const encrypted = await Crypto.encrypt(data, this.password);
+        const encrypted = await Crypto.encrypt(data, this.password, { 
+            masterKey: this.masterKey,
+            keySlots: this.keySlots,
+            ...options
+        });
+
+        // Update local key slots if they changed (e.g. new recovery phrase added)
+        if (encrypted.keySlots) {
+            this.keySlots = encrypted.keySlots;
+        }
+
         const json = JSON.stringify(encrypted, null, 2);
 
         // Create a Blob first, then write atomically
@@ -3968,6 +4301,8 @@ const Vault = {
                 store.put({
                     id: "current",
                     data: data,
+                    masterKey: this.masterKey,
+                    keySlots: this.keySlots,
                     updated: new Date().toISOString(),
                 });
                 tx.oncomplete = () => resolve();
@@ -3998,7 +4333,14 @@ const Vault = {
                 const store = tx.objectStore("vault");
                 const getRequest = store.get("current");
                 getRequest.onsuccess = () => {
-                    resolve(getRequest.result?.data || null);
+                    const res = getRequest.result;
+                    if (res) {
+                        if (res.masterKey) this.masterKey = res.masterKey;
+                        if (res.keySlots) this.keySlots = res.keySlots;
+                        resolve(res.data);
+                    } else {
+                        resolve(null);
+                    }
                 };
                 getRequest.onerror = () => reject(getRequest.error);
             };
@@ -4025,7 +4367,10 @@ const Vault = {
                     types: [this.FILE_TYPE],
                 });
 
-                const encrypted = await Crypto.encrypt(data, this.password);
+                const encrypted = await Crypto.encrypt(data, this.password, {
+                    masterKey: this.masterKey,
+                    keySlots: this.keySlots
+                });
                 const json = JSON.stringify(encrypted, null, 2);
 
                 const writable = await handle.createWritable();
@@ -4041,7 +4386,10 @@ const Vault = {
             }
         } else {
             // Fallback: download
-            const encrypted = await Crypto.encrypt(data, this.password);
+            const encrypted = await Crypto.encrypt(data, this.password, {
+                masterKey: this.masterKey,
+                keySlots: this.keySlots
+            });
             const json = JSON.stringify(encrypted, null, 2);
 
             const blob = new Blob([json], { type: "application/json" });
@@ -4096,6 +4444,8 @@ const Vault = {
      */
     lock(releaseHandle = false) {
         this.password = null;
+        this.masterKey = null;
+        this.keySlots = [];
         this.isLocked = true;
 
         if (releaseHandle) {
@@ -4142,18 +4492,76 @@ const Vault = {
             const file = await this.fileHandle.getFile();
             const text = await file.text();
             const encrypted = JSON.parse(text);
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
 
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
-            return { success: true, data: data };
+            return { success: true, data: decrypted.data };
         } catch (error) {
             if (error.message.includes("Decryption failed")) {
                 return { success: false, wrongPassword: true };
             }
             throw error;
         }
+    },
+
+    /**
+     * Generate a new recovery phrase
+     */
+    async generateRecoveryPhrase() {
+        return await Crypto.generateRecoveryPhrase();
+    },
+
+    /**
+     * Enable recovery phrase
+     */
+    async enableRecoveryPhrase() {
+        if (this.isLocked) throw new Error("Vault is locked");
+
+        const phrase = await this.generateRecoveryPhrase();
+        
+        // Load current data
+        const data = (await this.loadFromIndexedDB()) || this.createVaultStructure(null);
+        
+        // Store phrase in settings for reveal
+        if (!data.settings) data.settings = {};
+        data.settings.recoveryPhrase = phrase;
+        
+        const vaultData = this.createVaultStructure(data);
+        
+        // Create recovery slot directly (avoid encrypting just to get slots)
+        const recoverySlot = await Crypto.wrapMasterKey(this.masterKey, phrase, "recovery");
+        this.keySlots.push(recoverySlot);
+
+        // Save to file if available
+        if (this.hasFileSystemAccess && this.fileHandle) {
+            await this.saveToFile(vaultData);
+        }
+        
+        // Update IndexedDB
+        await this.saveToIndexedDB(vaultData);
+
+        return phrase;
+    },
+
+    /**
+     * Check if recovery phrase is set up
+     */
+    hasRecoverySlot() {
+        return this.keySlots.some(slot => slot.type === "recovery");
+    },
+
+    /**
+     * Get the stored recovery phrase
+     */
+    async getRecoveryPhrase() {
+        if (this.isLocked) throw new Error("Vault is locked");
+        
+        const data = await this.loadFromIndexedDB();
+        return data?.settings?.recoveryPhrase || null;
     },
 
     /**
@@ -4490,6 +4898,8 @@ const Modal = {
                         if (onSubmit) {
                             const result = await onSubmit(password);
                             if (result.success) {
+                                // Clear onClose to prevent cancelled resolution
+                                this.activeModal.onClose = null;
                                 this.hide();
                                 resolve({ success: true, password });
                             } else if (result.wrongPassword) {
@@ -4500,6 +4910,8 @@ const Modal = {
                                 passwordInput.focus();
                             }
                         } else {
+                            // Clear onClose to prevent cancelled resolution
+                            this.activeModal.onClose = null;
                             this.hide();
                             resolve({ success: true, password });
                         }
@@ -4543,7 +4955,10 @@ const Modal = {
                     <div class="create-vault-modal">
                         <p class="modal-description">
                             Create a password-protected vault to store your knowledge base.
-                            Choose a strong password - it cannot be recovered if lost.
+                            Choose a strong password you can remember.
+                        </p>
+                        <p class="modal-hint" style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                            💡 <strong>Tip:</strong> After creating your vault, go to Settings → Security to set up a 24-word recovery phrase for backup access.
                         </p>
                         <div class="form-group">
                             <label for="new-password">Password</label>
@@ -4690,10 +5105,19 @@ const Modal = {
                     </div>
                     
                     <div class="settings-section">
+                        <h3>Security</h3>
+                        <div class="settings-actions">
+                            <button class="btn btn-secondary" id="btn-change-password">🔑 Change Password</button>
+                            <button class="btn btn-secondary" id="btn-recovery">
+                                ${callbacks.hasRecovery ? "🛡️ View Recovery Phrase" : "🛡️ Setup Recovery Phrase"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
                         <h3>Actions</h3>
                         <div class="settings-actions">
                             <button class="btn btn-secondary" id="btn-export">📤 Export Vault</button>
-                            <button class="btn btn-secondary" id="btn-change-password">🔑 Change Password</button>
                             <button class="btn btn-secondary" id="btn-lock">🔒 Lock Vault</button>
                         </div>
                     </div>
@@ -4728,6 +5152,11 @@ const Modal = {
                     callbacks.onChangePassword?.();
                 });
             document
+                .getElementById("btn-recovery")
+                ?.addEventListener("click", () => {
+                    callbacks.onRecovery?.();
+                });
+            document
                 .getElementById("btn-lock")
                 ?.addEventListener("click", () => {
                     this.hide();
@@ -4739,6 +5168,32 @@ const Modal = {
                     this.hide();
                 });
         }, 0);
+    },
+
+    /**
+     * Show recovery phrase modal
+     */
+    showRecoveryPhrase(phrase) {
+        return this.show({
+            title: "🛡️ Recovery Phrase",
+            allowClose: true,
+            body: `
+                <div class="recovery-modal">
+                    <p class="modal-description">
+                        This is your backup key. If you lose your password, these 24 words are the ONLY way to unlock your vault.
+                    </p>
+                    <div class="recovery-phrase-display">
+                        ${phrase.split(' ').map((word, i) => 
+                            `<div class="recovery-word"><span class="word-num">${i+1}</span> ${word}</div>`
+                        ).join('')}
+                    </div>
+                    <div class="warning-box">
+                        ⚠️ Write these words down on paper and store them safely. Do not share them.
+                    </div>
+                </div>
+            `,
+            footer: `<button class="btn btn-primary" onclick="Modal.hide()">I have saved it</button>`
+        });
     },
 
     /**
@@ -6933,7 +7388,7 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            
+
             // Check for heading markdown shortcut (# followed by space)
             const headingMatch = text.match(/^(#{1,6})\s/);
             if (headingMatch) {
@@ -11828,47 +12283,91 @@ const App = {
      * Handle opening an existing vault from welcome screen
      */
     async handleOpenVault() {
-        Modal.show({
-            title: "🔐 Open Vault",
-            allowClose: true,
-            body: `
-                <div class="password-modal">
-                    <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-                        Enter your password, then select your .aladin vault file.
-                    </p>
-                    <div class="form-group">
-                        <label for="open-vault-password">Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="open-vault-password" placeholder="Enter your password" autocomplete="current-password" />
-                            <button type="button" class="btn-toggle-password" aria-label="Toggle password visibility">👁</button>
+        let useRecovery = false;
+
+        const showPasswordMode = () => {
+            Modal.show({
+                title: "🔐 Open Vault",
+                allowClose: true,
+                body: `
+                    <div class="password-modal">
+                        <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                            Enter your password, then select your .aladin vault file.
+                        </p>
+                        <div class="form-group">
+                            <label for="open-vault-password">Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="open-vault-password" placeholder="Enter your password" autocomplete="current-password" />
+                                <button type="button" class="btn-toggle-password" aria-label="Toggle password visibility">👁</button>
+                            </div>
+                        </div>
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <button type="button" class="btn-link" id="btn-use-recovery">Use Recovery Phrase instead</button>
                         </div>
                     </div>
-                </div>
-            `,
-            footer: `
-                <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
-                <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
-            `,
-            onClose: () => { },
-        });
+                `,
+                footer: `
+                    <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
+                    <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
+                `,
+                onClose: () => { },
+            });
+        };
 
-        return new Promise((resolve) => {
+        const showRecoveryMode = () => {
+            Modal.show({
+                title: "🔑 Recover Vault",
+                allowClose: true,
+                body: `
+                    <div class="password-modal">
+                        <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                            Enter your 24-word recovery phrase, then select your .aladin vault file.
+                        </p>
+                        <div class="form-group">
+                            <label for="open-vault-recovery">Recovery Phrase</label>
+                            <textarea id="open-vault-recovery" rows="3" placeholder="word1 word2 word3 ... (24 words)" style="width: 100%; resize: vertical; font-family: monospace;"></textarea>
+                        </div>
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <button type="button" class="btn-link" id="btn-use-password">Use Password instead</button>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
+                    <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
+                `,
+                onClose: () => { },
+            });
+        };
+
+        const setupHandlers = (resolve) => {
             setTimeout(() => {
-                const passwordInput = document.getElementById(
-                    "open-vault-password",
-                );
+                const passwordInput = document.getElementById("open-vault-password");
+                const recoveryInput = document.getElementById("open-vault-recovery");
                 const selectBtn = document.getElementById("btn-select-open");
                 const cancelBtn = document.getElementById("btn-cancel-open");
-                const toggleBtn = document.querySelector(
-                    ".btn-toggle-password",
-                );
+                const toggleBtn = document.querySelector(".btn-toggle-password");
+                const useRecoveryBtn = document.getElementById("btn-use-recovery");
+                const usePasswordBtn = document.getElementById("btn-use-password");
 
                 // Toggle password visibility
                 toggleBtn?.addEventListener("click", () => {
-                    const type =
-                        passwordInput.type === "password" ? "text" : "password";
+                    const type = passwordInput.type === "password" ? "text" : "password";
                     passwordInput.type = type;
                     toggleBtn.textContent = type === "password" ? "👁" : "🙈";
+                });
+
+                // Switch modes
+                useRecoveryBtn?.addEventListener("click", () => {
+                    useRecovery = true;
+                    showRecoveryMode();
+                    setupHandlers(resolve);
+                });
+
+                usePasswordBtn?.addEventListener("click", () => {
+                    useRecovery = false;
+                    showPasswordMode();
+                    setupHandlers(resolve);
                 });
 
                 // Cancel handler
@@ -11880,17 +12379,28 @@ const App = {
 
                 // Select and open handler
                 const handleSelect = async () => {
-                    const password = passwordInput.value;
-                    if (!password) {
-                        Modal.showError("Please enter a password");
+                    const secret = useRecovery 
+                        ? recoveryInput?.value.trim().toLowerCase().replace(/\s+/g, ' ')
+                        : passwordInput?.value;
+
+                    if (!secret) {
+                        Modal.showError(useRecovery ? "Please enter your recovery phrase" : "Please enter a password");
                         return;
+                    }
+
+                    if (useRecovery) {
+                        const wordCount = secret.split(' ').length;
+                        if (wordCount !== 24) {
+                            Modal.showError(`Recovery phrase must be 24 words (you entered ${wordCount})`);
+                            return;
+                        }
                     }
 
                     selectBtn.disabled = true;
                     selectBtn.textContent = "Opening...";
 
                     try {
-                        const openResult = await Vault.openVault(password);
+                        const openResult = await Vault.openVault(secret);
 
                         if (openResult.cancelled) {
                             selectBtn.disabled = false;
@@ -11900,10 +12410,15 @@ const App = {
 
                         if (openResult.wrongPassword) {
                             Modal.showError(
-                                "Incorrect password. Please try again.",
+                                useRecovery ? "Invalid recovery phrase. Please check and try again." : "Incorrect password. Please try again."
                             );
-                            passwordInput.value = "";
-                            passwordInput.focus();
+                            if (passwordInput) {
+                                passwordInput.value = "";
+                                passwordInput.focus();
+                            }
+                            if (recoveryInput) {
+                                recoveryInput.focus();
+                            }
                             selectBtn.disabled = false;
                             selectBtn.textContent = "Select Vault File";
                             return;
@@ -11915,9 +12430,7 @@ const App = {
                             resolve();
                         }
                     } catch (error) {
-                        Modal.showError(
-                            "Failed to open vault: " + error.message,
-                        );
+                        Modal.showError("Failed to open vault: " + error.message);
                         selectBtn.disabled = false;
                         selectBtn.textContent = "Select Vault File";
                     }
@@ -11928,6 +12441,12 @@ const App = {
                     if (e.key === "Enter") handleSelect();
                 });
             }, 0);
+        };
+
+        showPasswordMode();
+
+        return new Promise((resolve) => {
+            setupHandlers(resolve);
         });
     },
 
@@ -12037,8 +12556,11 @@ const App = {
     /**
      * Show vault settings modal
      */
-    showVaultSettings() {
+    async showVaultSettings() {
+        const hasRecovery = Vault.hasRecoverySlot();
+
         Modal.showVaultSettings({
+            hasRecovery: hasRecovery,
             onExport: async () => {
                 const result = await Vault.exportVault();
                 if (result.success) {
@@ -12050,6 +12572,36 @@ const App = {
                 await Modal.showChangePassword(async (current, newPass) => {
                     return await Vault.changePassword(current, newPass);
                 });
+            },
+            onRecovery: async () => {
+                Modal.hide();
+                // Verify password first
+                const promptResult = await Modal.showPasswordPrompt({
+                    title: hasRecovery ? "View Recovery Phrase" : "Enable Recovery Phrase",
+                    showOpenFile: false,
+                    onSubmit: async (password) => {
+                        if (password !== Vault.password) {
+                            return { wrongPassword: true };
+                        }
+                        return { success: true };
+                    }
+                });
+
+                if (promptResult.success) {
+                    if (hasRecovery) {
+                        const phrase = await Vault.getRecoveryPhrase();
+                        Modal.showRecoveryPhrase(phrase);
+                    } else {
+                        try {
+                            const phrase = await Vault.enableRecoveryPhrase();
+                            Modal.showRecoveryPhrase(phrase);
+                        } catch (e) {
+                            Modal.showError("Failed to enable recovery: " + e.message);
+                        }
+                    }
+                }
+                
+                // If cancelled, do nothing (modal closed)
             },
             onLock: () => {
                 this.lockVault();

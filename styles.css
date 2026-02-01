@@ -2847,3 +2847,59 @@ h6.ce-header {
         max-height: 50vh;
     }
 }
+
+/* ========================================
+   Recovery Phrase
+   ======================================== */
+
+.recovery-phrase-display {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.recovery-word {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-sm);
+    padding: 4px;
+}
+
+.recovery-word .word-num {
+    color: var(--text-muted);
+    user-select: none;
+    width: 24px;
+    text-align: right;
+}
+
+.warning-box {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    color: #f57f17;
+    padding: var(--spacing-md);
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    margin-top: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+:root[data-theme="dark"] .warning-box {
+    background: #3e2723;
+    border-color: #5d4037;
+    color: #ffcc80;
+}
+
+@media (max-width: 600px) {
+    .recovery-phrase-display {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

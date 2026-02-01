@@ -324,47 +324,91 @@ const App = {
      * Handle opening an existing vault from welcome screen
      */
     async handleOpenVault() {
-        Modal.show({
-            title: "🔐 Open Vault",
-            allowClose: true,
-            body: `
-                <div class="password-modal">
-                    <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-                        Enter your password, then select your .aladin vault file.
-                    </p>
-                    <div class="form-group">
-                        <label for="open-vault-password">Password</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" id="open-vault-password" placeholder="Enter your password" autocomplete="current-password" />
-                            <button type="button" class="btn-toggle-password" aria-label="Toggle password visibility">👁</button>
+        let useRecovery = false;
+
+        const showPasswordMode = () => {
+            Modal.show({
+                title: "🔐 Open Vault",
+                allowClose: true,
+                body: `
+                    <div class="password-modal">
+                        <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                            Enter your password, then select your .aladin vault file.
+                        </p>
+                        <div class="form-group">
+                            <label for="open-vault-password">Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="open-vault-password" placeholder="Enter your password" autocomplete="current-password" />
+                                <button type="button" class="btn-toggle-password" aria-label="Toggle password visibility">👁</button>
+                            </div>
+                        </div>
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <button type="button" class="btn-link" id="btn-use-recovery">Use Recovery Phrase instead</button>
                         </div>
                     </div>
-                </div>
-            `,
-            footer: `
-                <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
-                <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
-            `,
-            onClose: () => { },
-        });
+                `,
+                footer: `
+                    <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
+                    <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
+                `,
+                onClose: () => { },
+            });
+        };
 
-        return new Promise((resolve) => {
+        const showRecoveryMode = () => {
+            Modal.show({
+                title: "🔑 Recover Vault",
+                allowClose: true,
+                body: `
+                    <div class="password-modal">
+                        <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                            Enter your 24-word recovery phrase, then select your .aladin vault file.
+                        </p>
+                        <div class="form-group">
+                            <label for="open-vault-recovery">Recovery Phrase</label>
+                            <textarea id="open-vault-recovery" rows="3" placeholder="word1 word2 word3 ... (24 words)" style="width: 100%; resize: vertical; font-family: monospace;"></textarea>
+                        </div>
+                        <div class="form-hint" style="margin-top: 12px;">
+                            <button type="button" class="btn-link" id="btn-use-password">Use Password instead</button>
+                        </div>
+                    </div>
+                `,
+                footer: `
+                    <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
+                    <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
+                `,
+                onClose: () => { },
+            });
+        };
+
+        const setupHandlers = (resolve) => {
             setTimeout(() => {
-                const passwordInput = document.getElementById(
-                    "open-vault-password",
-                );
+                const passwordInput = document.getElementById("open-vault-password");
+                const recoveryInput = document.getElementById("open-vault-recovery");
                 const selectBtn = document.getElementById("btn-select-open");
                 const cancelBtn = document.getElementById("btn-cancel-open");
-                const toggleBtn = document.querySelector(
-                    ".btn-toggle-password",
-                );
+                const toggleBtn = document.querySelector(".btn-toggle-password");
+                const useRecoveryBtn = document.getElementById("btn-use-recovery");
+                const usePasswordBtn = document.getElementById("btn-use-password");
 
                 // Toggle password visibility
                 toggleBtn?.addEventListener("click", () => {
-                    const type =
-                        passwordInput.type === "password" ? "text" : "password";
+                    const type = passwordInput.type === "password" ? "text" : "password";
                     passwordInput.type = type;
                     toggleBtn.textContent = type === "password" ? "👁" : "🙈";
+                });
+
+                // Switch modes
+                useRecoveryBtn?.addEventListener("click", () => {
+                    useRecovery = true;
+                    showRecoveryMode();
+                    setupHandlers(resolve);
+                });
+
+                usePasswordBtn?.addEventListener("click", () => {
+                    useRecovery = false;
+                    showPasswordMode();
+                    setupHandlers(resolve);
                 });
 
                 // Cancel handler
@@ -376,17 +420,28 @@ const App = {
 
                 // Select and open handler
                 const handleSelect = async () => {
-                    const password = passwordInput.value;
-                    if (!password) {
-                        Modal.showError("Please enter a password");
+                    const secret = useRecovery 
+                        ? recoveryInput?.value.trim().toLowerCase().replace(/\s+/g, ' ')
+                        : passwordInput?.value;
+
+                    if (!secret) {
+                        Modal.showError(useRecovery ? "Please enter your recovery phrase" : "Please enter a password");
                         return;
+                    }
+
+                    if (useRecovery) {
+                        const wordCount = secret.split(' ').length;
+                        if (wordCount !== 24) {
+                            Modal.showError(`Recovery phrase must be 24 words (you entered ${wordCount})`);
+                            return;
+                        }
                     }
 
                     selectBtn.disabled = true;
                     selectBtn.textContent = "Opening...";
 
                     try {
-                        const openResult = await Vault.openVault(password);
+                        const openResult = await Vault.openVault(secret);
 
                         if (openResult.cancelled) {
                             selectBtn.disabled = false;
@@ -396,10 +451,15 @@ const App = {
 
                         if (openResult.wrongPassword) {
                             Modal.showError(
-                                "Incorrect password. Please try again.",
+                                useRecovery ? "Invalid recovery phrase. Please check and try again." : "Incorrect password. Please try again."
                             );
-                            passwordInput.value = "";
-                            passwordInput.focus();
+                            if (passwordInput) {
+                                passwordInput.value = "";
+                                passwordInput.focus();
+                            }
+                            if (recoveryInput) {
+                                recoveryInput.focus();
+                            }
                             selectBtn.disabled = false;
                             selectBtn.textContent = "Select Vault File";
                             return;
@@ -411,9 +471,7 @@ const App = {
                             resolve();
                         }
                     } catch (error) {
-                        Modal.showError(
-                            "Failed to open vault: " + error.message,
-                        );
+                        Modal.showError("Failed to open vault: " + error.message);
                         selectBtn.disabled = false;
                         selectBtn.textContent = "Select Vault File";
                     }
@@ -424,6 +482,12 @@ const App = {
                     if (e.key === "Enter") handleSelect();
                 });
             }, 0);
+        };
+
+        showPasswordMode();
+
+        return new Promise((resolve) => {
+            setupHandlers(resolve);
         });
     },
 
@@ -533,8 +597,11 @@ const App = {
     /**
      * Show vault settings modal
      */
-    showVaultSettings() {
+    async showVaultSettings() {
+        const hasRecovery = Vault.hasRecoverySlot();
+
         Modal.showVaultSettings({
+            hasRecovery: hasRecovery,
             onExport: async () => {
                 const result = await Vault.exportVault();
                 if (result.success) {
@@ -546,6 +613,36 @@ const App = {
                 await Modal.showChangePassword(async (current, newPass) => {
                     return await Vault.changePassword(current, newPass);
                 });
+            },
+            onRecovery: async () => {
+                Modal.hide();
+                // Verify password first
+                const promptResult = await Modal.showPasswordPrompt({
+                    title: hasRecovery ? "View Recovery Phrase" : "Enable Recovery Phrase",
+                    showOpenFile: false,
+                    onSubmit: async (password) => {
+                        if (password !== Vault.password) {
+                            return { wrongPassword: true };
+                        }
+                        return { success: true };
+                    }
+                });
+
+                if (promptResult.success) {
+                    if (hasRecovery) {
+                        const phrase = await Vault.getRecoveryPhrase();
+                        Modal.showRecoveryPhrase(phrase);
+                    } else {
+                        try {
+                            const phrase = await Vault.enableRecoveryPhrase();
+                            Modal.showRecoveryPhrase(phrase);
+                        } catch (e) {
+                            Modal.showError("Failed to enable recovery: " + e.message);
+                        }
+                    }
+                }
+                
+                // If cancelled, do nothing (modal closed)
             },
             onLock: () => {
                 this.lockVault();

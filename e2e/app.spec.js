@@ -515,3 +515,171 @@ test.describe('Hashtag Persistence', () => {
         expect(hasPlainOne || hasPlainTwo).toBe(true);
     });
 });
+
+test.describe('Recovery Phrase Feature', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto(DEMO_URL);
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+    });
+
+    test('should have recovery phrase generation function available', async ({ page }) => {
+        const hasFunction = await page.evaluate(() => {
+            return typeof window.Crypto?.generateRecoveryPhrase === 'function';
+        });
+        expect(hasFunction).toBe(true);
+    });
+
+    test('should generate 24-word recovery phrase', async ({ page }) => {
+        const phrase = await page.evaluate(async () => {
+            return await window.Crypto.generateRecoveryPhrase();
+        });
+
+        expect(phrase).toBeTruthy();
+        const words = phrase.split(' ');
+        expect(words.length).toBe(24);
+        
+        // All words should be non-empty strings
+        words.forEach(word => {
+            expect(word.length).toBeGreaterThan(0);
+        });
+    });
+
+    test('should have BIP39 wordlist loaded', async ({ page }) => {
+        const wordlistInfo = await page.evaluate(() => {
+            const wordlist = window.WORDLIST;
+            return {
+                exists: !!wordlist,
+                length: wordlist?.length || 0,
+                firstWord: wordlist?.[0] || null,
+                lastWord: wordlist?.[2047] || null
+            };
+        });
+
+        expect(wordlistInfo.exists).toBe(true);
+        expect(wordlistInfo.length).toBe(2048);
+        expect(wordlistInfo.firstWord).toBe('abandon');
+        expect(wordlistInfo.lastWord).toBe('zoo');
+    });
+
+    test('should generate different phrases each time', async ({ page }) => {
+        const phrases = await page.evaluate(async () => {
+            const p1 = await window.Crypto.generateRecoveryPhrase();
+            const p2 = await window.Crypto.generateRecoveryPhrase();
+            return [p1, p2];
+        });
+
+        expect(phrases[0]).not.toBe(phrases[1]);
+    });
+
+    test('recovery phrase words should all be from BIP39 wordlist', async ({ page }) => {
+        const result = await page.evaluate(async () => {
+            const phrase = await window.Crypto.generateRecoveryPhrase();
+            const words = phrase.split(' ');
+            const wordlist = window.WORDLIST;
+            
+            return words.map(word => ({
+                word,
+                inWordlist: wordlist.includes(word)
+            }));
+        });
+
+        result.forEach(({ word, inWordlist }) => {
+            expect(inWordlist).toBe(true);
+        });
+    });
+
+    test('should be able to encrypt and decrypt with recovery phrase', async ({ page }) => {
+        const result = await page.evaluate(async () => {
+            const testData = { message: 'Secret test data', timestamp: Date.now() };
+            const password = 'TestPassword123!';
+            const recoveryPhrase = await window.Crypto.generateRecoveryPhrase();
+            
+            // Encrypt with password and recovery phrase
+            const encrypted = await window.Crypto.encrypt(testData, password, {
+                recoveryPhrase: recoveryPhrase
+            });
+            
+            // Verify structure
+            if (encrypted.version !== '2.0') return { error: 'Wrong version' };
+            if (!encrypted.keySlots || encrypted.keySlots.length !== 2) {
+                return { error: 'Wrong keySlots count: ' + encrypted.keySlots?.length };
+            }
+            
+            // Decrypt with password
+            const decryptedWithPassword = await window.Crypto.decrypt(encrypted, password);
+            
+            // Decrypt with recovery phrase
+            const decryptedWithRecovery = await window.Crypto.decrypt(encrypted, recoveryPhrase);
+            
+            return {
+                success: true,
+                passwordDecrypt: decryptedWithPassword.data,
+                recoveryDecrypt: decryptedWithRecovery.data,
+                originalData: testData
+            };
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.passwordDecrypt.message).toBe(result.originalData.message);
+        expect(result.recoveryDecrypt.message).toBe(result.originalData.message);
+    });
+
+    test('should show recovery option in open vault modal', async ({ page }) => {
+        // Start fresh (no demo mode)
+        await page.goto('/');
+        
+        // Wait for welcome modal
+        await page.waitForSelector('.modal-overlay:not(.hidden)', { timeout: 5000 });
+        
+        // Click "Open Existing Vault"
+        await page.click('#btn-open-vault');
+        
+        // Wait for password modal
+        await page.waitForSelector('#open-vault-password', { timeout: 5000 });
+        
+        // Check for "Use Recovery Phrase" link
+        const recoveryLink = page.locator('#btn-use-recovery');
+        await expect(recoveryLink).toBeVisible();
+        await expect(recoveryLink).toHaveText('Use Recovery Phrase instead');
+    });
+
+    test('should switch to recovery mode when clicking recovery link', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('.modal-overlay:not(.hidden)', { timeout: 5000 });
+        await page.click('#btn-open-vault');
+        await page.waitForSelector('#open-vault-password', { timeout: 5000 });
+        
+        // Click recovery link
+        await page.click('#btn-use-recovery');
+        
+        // Should now see recovery textarea instead of password input
+        await page.waitForSelector('#open-vault-recovery', { timeout: 5000 });
+        const recoveryInput = page.locator('#open-vault-recovery');
+        await expect(recoveryInput).toBeVisible();
+        
+        // Should see "Use Password instead" link
+        const passwordLink = page.locator('#btn-use-password');
+        await expect(passwordLink).toBeVisible();
+    });
+
+    test('should validate 24-word count in recovery mode', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('.modal-overlay:not(.hidden)', { timeout: 5000 });
+        await page.click('#btn-open-vault');
+        await page.waitForSelector('#open-vault-password', { timeout: 5000 });
+        await page.click('#btn-use-recovery');
+        await page.waitForSelector('#open-vault-recovery', { timeout: 5000 });
+        
+        // Enter only 5 words
+        await page.fill('#open-vault-recovery', 'word1 word2 word3 word4 word5');
+        
+        // Click select file button (this will validate first)
+        await page.click('#btn-select-open');
+        
+        // Should show error about word count
+        await page.waitForSelector('.modal-error', { timeout: 5000 });
+        const errorText = await page.locator('.modal-error').textContent();
+        expect(errorText).toContain('24 words');
+        expect(errorText).toContain('5');
+    });
+});

@@ -7,6 +7,8 @@ const Vault = {
     // Current state
     fileHandle: null,
     password: null,
+    masterKey: null,
+    keySlots: [],
     isLocked: true,
     lastSaveTime: null,
     isDirty: false,
@@ -322,10 +324,13 @@ const Vault = {
             const text = await file.text();
             const encrypted = JSON.parse(text);
 
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
+            const data = decrypted.data;
 
             this.fileHandle = savedHandle;
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
             // Update last opened time
@@ -368,6 +373,8 @@ const Vault = {
 
             this.fileHandle = handle;
             this.password = password;
+            this.masterKey = await Crypto.generateMasterKey();
+            this.keySlots = [];
             this.isLocked = false;
 
             // Create initial vault data
@@ -396,13 +403,17 @@ const Vault = {
      */
     async createNewVaultFallback(password, initialData = null) {
         this.password = password;
+        this.masterKey = await Crypto.generateMasterKey();
+        this.keySlots = [];
         this.isLocked = false;
 
         // Create initial vault data
         const vaultData = this.createVaultStructure(initialData);
 
         // Encrypt
-        const encrypted = await Crypto.encrypt(vaultData, password);
+        const encrypted = await Crypto.encrypt(vaultData, password, { 
+            masterKey: this.masterKey 
+        });
         const json = JSON.stringify(encrypted, null, 2);
 
         // Download
@@ -449,9 +460,13 @@ const Vault = {
             const text = await file.text();
             const encrypted = JSON.parse(text);
 
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
+            const data = decrypted.data;
 
+            this.fileHandle = handle;
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
             // Remember this vault and persist handle
@@ -491,9 +506,12 @@ const Vault = {
                 try {
                     const text = await file.text();
                     const encrypted = JSON.parse(text);
-                    const data = await Crypto.decrypt(encrypted, password);
+                    const decrypted = await Crypto.decrypt(encrypted, password);
+                    const data = decrypted.data;
 
                     this.password = password;
+                    this.masterKey = decrypted.masterKey;
+                    this.keySlots = decrypted.keySlots || [];
                     this.isLocked = false;
 
                     // Store in IndexedDB as working copy
@@ -556,12 +574,22 @@ const Vault = {
      * Uses atomic write to prevent file locking issues with cloud sync (OneDrive, Dropbox, iCloud)
      * Includes exponential backoff retry for cloud sync locked files
      */
-    async saveToFile(data) {
+    async saveToFile(data, options = {}) {
         if (!this.fileHandle) {
             throw new Error("No file handle");
         }
 
-        const encrypted = await Crypto.encrypt(data, this.password);
+        const encrypted = await Crypto.encrypt(data, this.password, { 
+            masterKey: this.masterKey,
+            keySlots: this.keySlots,
+            ...options
+        });
+
+        // Update local key slots if they changed (e.g. new recovery phrase added)
+        if (encrypted.keySlots) {
+            this.keySlots = encrypted.keySlots;
+        }
+
         const json = JSON.stringify(encrypted, null, 2);
 
         // Create a Blob first, then write atomically
@@ -640,6 +668,8 @@ const Vault = {
                 store.put({
                     id: "current",
                     data: data,
+                    masterKey: this.masterKey,
+                    keySlots: this.keySlots,
                     updated: new Date().toISOString(),
                 });
                 tx.oncomplete = () => resolve();
@@ -670,7 +700,14 @@ const Vault = {
                 const store = tx.objectStore("vault");
                 const getRequest = store.get("current");
                 getRequest.onsuccess = () => {
-                    resolve(getRequest.result?.data || null);
+                    const res = getRequest.result;
+                    if (res) {
+                        if (res.masterKey) this.masterKey = res.masterKey;
+                        if (res.keySlots) this.keySlots = res.keySlots;
+                        resolve(res.data);
+                    } else {
+                        resolve(null);
+                    }
                 };
                 getRequest.onerror = () => reject(getRequest.error);
             };
@@ -697,7 +734,10 @@ const Vault = {
                     types: [this.FILE_TYPE],
                 });
 
-                const encrypted = await Crypto.encrypt(data, this.password);
+                const encrypted = await Crypto.encrypt(data, this.password, {
+                    masterKey: this.masterKey,
+                    keySlots: this.keySlots
+                });
                 const json = JSON.stringify(encrypted, null, 2);
 
                 const writable = await handle.createWritable();
@@ -713,7 +753,10 @@ const Vault = {
             }
         } else {
             // Fallback: download
-            const encrypted = await Crypto.encrypt(data, this.password);
+            const encrypted = await Crypto.encrypt(data, this.password, {
+                masterKey: this.masterKey,
+                keySlots: this.keySlots
+            });
             const json = JSON.stringify(encrypted, null, 2);
 
             const blob = new Blob([json], { type: "application/json" });
@@ -768,6 +811,8 @@ const Vault = {
      */
     lock(releaseHandle = false) {
         this.password = null;
+        this.masterKey = null;
+        this.keySlots = [];
         this.isLocked = true;
 
         if (releaseHandle) {
@@ -814,18 +859,76 @@ const Vault = {
             const file = await this.fileHandle.getFile();
             const text = await file.text();
             const encrypted = JSON.parse(text);
-            const data = await Crypto.decrypt(encrypted, password);
+            const decrypted = await Crypto.decrypt(encrypted, password);
 
             this.password = password;
+            this.masterKey = decrypted.masterKey;
+            this.keySlots = decrypted.keySlots || [];
             this.isLocked = false;
 
-            return { success: true, data: data };
+            return { success: true, data: decrypted.data };
         } catch (error) {
             if (error.message.includes("Decryption failed")) {
                 return { success: false, wrongPassword: true };
             }
             throw error;
         }
+    },
+
+    /**
+     * Generate a new recovery phrase
+     */
+    async generateRecoveryPhrase() {
+        return await Crypto.generateRecoveryPhrase();
+    },
+
+    /**
+     * Enable recovery phrase
+     */
+    async enableRecoveryPhrase() {
+        if (this.isLocked) throw new Error("Vault is locked");
+
+        const phrase = await this.generateRecoveryPhrase();
+        
+        // Load current data
+        const data = (await this.loadFromIndexedDB()) || this.createVaultStructure(null);
+        
+        // Store phrase in settings for reveal
+        if (!data.settings) data.settings = {};
+        data.settings.recoveryPhrase = phrase;
+        
+        const vaultData = this.createVaultStructure(data);
+        
+        // Create recovery slot directly (avoid encrypting just to get slots)
+        const recoverySlot = await Crypto.wrapMasterKey(this.masterKey, phrase, "recovery");
+        this.keySlots.push(recoverySlot);
+
+        // Save to file if available
+        if (this.hasFileSystemAccess && this.fileHandle) {
+            await this.saveToFile(vaultData);
+        }
+        
+        // Update IndexedDB
+        await this.saveToIndexedDB(vaultData);
+
+        return phrase;
+    },
+
+    /**
+     * Check if recovery phrase is set up
+     */
+    hasRecoverySlot() {
+        return this.keySlots.some(slot => slot.type === "recovery");
+    },
+
+    /**
+     * Get the stored recovery phrase
+     */
+    async getRecoveryPhrase() {
+        if (this.isLocked) throw new Error("Vault is locked");
+        
+        const data = await this.loadFromIndexedDB();
+        return data?.settings?.recoveryPhrase || null;
     },
 
     /**

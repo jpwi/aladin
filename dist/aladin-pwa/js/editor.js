@@ -396,7 +396,7 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            
+
             // Check for heading markdown shortcut (# followed by space)
             const headingMatch = text.match(/^(#{1,6})\s/);
             if (headingMatch) {
