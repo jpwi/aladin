@@ -324,10 +324,13 @@ const Editor = {
                 this.setupSlashCommands();
                 this.setupStarCommands();
                 this.setupHashtagCommands();
+                this.setupMentionCommands();
                 this.setupDragDrop();
                 this.setupBlockDragHandles();
                 this.setupImmediateSave();
                 this.loadTagsFromContent(content.blocks);
+                this.loadPeopleFromStorage();
+                this.loadMentionsFromContent(content.blocks);
                 Sidebar.update(content.blocks);
             },
         });
@@ -460,6 +463,12 @@ const Editor = {
     hashtagSelectedIndex: 0,
     hashtagQuery: "",
     allTags: [], // Will be populated from storage
+
+    // Mention (@) command menu state
+    mentionMenu: null,
+    mentionSelectedIndex: 0,
+    mentionQuery: "",
+    allPeople: [], // Will be populated from storage
 
     // Available slash commands
     slashCommands: [
@@ -1575,6 +1584,535 @@ const Editor = {
             setTimeout(() => {
                 blockElement.classList.remove('highlight-flash');
             }, 2000);
+        }
+    },
+
+    // ==========================================
+    // Mention Commands (@person)
+    // ==========================================
+
+    /**
+     * Load people from storage
+     */
+    async loadPeopleFromStorage() {
+        try {
+            const storedPeople = await Storage.getSetting('people', []);
+            this.allPeople = Array.isArray(storedPeople) ? storedPeople.sort() : [];
+            console.log('Loaded people:', this.allPeople);
+        } catch (error) {
+            console.error('Failed to load people:', error);
+            this.allPeople = [];
+        }
+    },
+
+    /**
+     * Save people to storage
+     */
+    async savePeopleToStorage() {
+        try {
+            await Storage.saveSetting('people', this.allPeople);
+        } catch (error) {
+            console.error('Failed to save people:', error);
+        }
+    },
+
+    /**
+     * Load mentions from content blocks and style them in DOM
+     */
+    loadMentionsFromContent(blocks) {
+        const people = new Set(this.allPeople);
+        const mentionRegex = /@([a-zA-Z0-9_-]+(?:\s+[a-zA-Z0-9_-]+)?)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = mentionRegex.exec(plainText)) !== null) {
+                    people.add(match[1]);
+                }
+            }
+        });
+
+        this.allPeople = Array.from(people).sort();
+
+        // Style mentions in DOM after editor renders
+        setTimeout(() => this.styleMentionsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain mentions in DOM to styled links
+     */
+    styleMentionsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            const hasUnstyledMentions = this.hasUnstyledMentions(paragraph);
+            if (hasUnstyledMentions) {
+                this.processMentionsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled mentions
+     */
+    hasUnstyledMentions(element) {
+        // Check for <a> tags containing mentions but without mention-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^@[a-zA-Z0-9_-]+/.test(text) && !link.classList.contains('mention-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a mention-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process mentions in an element - handles both plain text and existing links
+     */
+    processMentionsInElement(element) {
+        // Clean up empty links
+        element.querySelectorAll('a:empty').forEach(link => link.remove());
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix <a> tags containing mentions but missing mention-link class
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const mentionMatch = text.match(/^@([a-zA-Z0-9_-]+)$/);
+            if (mentionMatch && !link.classList.contains('mention-link')) {
+                link.classList.add('mention-link');
+                link.dataset.person = mentionMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Process text nodes
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+
+            if (mentionRegex.test(text)) {
+                mentionRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = mentionRegex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'mention-link';
+                    link.dataset.person = match[1];
+                    link.textContent = '@' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
+    },
+
+    /**
+     * Setup mention (@) command menu
+     */
+    setupMentionCommands() {
+        // Create mention menu element
+        this.mentionMenu = document.createElement("div");
+        this.mentionMenu.className = "mention-menu hidden";
+        this.mentionMenu.id = "mention-menu";
+        document.body.appendChild(this.mentionMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleMentionInput(e);
+        });
+
+        // Handle keyboard navigation in mention menu
+        document.addEventListener("keydown", (e) => {
+            if (this.mentionMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredPeople();
+                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 && 
+                    !this.allPeople.some(p => p.toLowerCase() === this.mentionQuery.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+                this.mentionSelectedIndex = Math.min(this.mentionSelectedIndex + 1, totalOptions - 1);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.mentionSelectedIndex = Math.max(this.mentionSelectedIndex - 1, 0);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredPeople();
+                const query = this.mentionQuery;
+                const showCreateOption = query && query.length > 0 && 
+                    !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    if (this.mentionSelectedIndex >= options.length && showCreateOption) {
+                        this.executeMentionCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeMentionCommand(options[this.mentionSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeMentionCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideMentionMenu();
+            } else if (e.key === " ") {
+                const query = this.mentionQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeMentionCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".mention-menu") && !e.target.closest(".ce-block")) {
+                this.hideMentionMenu();
+            }
+        });
+
+        // Setup click handler for mention links
+        document.addEventListener("click", (e) => {
+            const mentionLink = e.target.closest(".mention-link");
+            if (mentionLink) {
+                e.preventDefault();
+                const person = mentionLink.dataset.person;
+                if (person) {
+                    this.showMentionOccurrences(person);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for mention commands
+     */
+    handleMentionInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        // Match @ followed by optional name characters at end
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+
+        if (mentionMatch) {
+            this.mentionQuery = mentionMatch[1].toLowerCase();
+            this.mentionSelectedIndex = 0;
+            this.showMentionMenu(paragraph);
+        } else {
+            this.hideMentionMenu();
+        }
+    },
+
+    /**
+     * Get filtered people based on query
+     */
+    getFilteredPeople() {
+        if (!this.mentionQuery) return this.allPeople.slice(0, 10);
+        return this.allPeople.filter(
+            (person) => person.toLowerCase().includes(this.mentionQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show mention menu
+     */
+    showMentionMenu(element) {
+        const filteredPeople = this.getFilteredPeople();
+        const query = this.mentionQuery;
+
+        const showCreateOption = query && query.length > 0 && 
+            !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+
+        if (filteredPeople.length === 0 && !showCreateOption) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        let menuHtml = '';
+
+        filteredPeople.forEach((person, index) => {
+            menuHtml += `
+                <div class="mention-menu-item ${index === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-person="${Utils.escapeHtml(person)}">
+                    <span class="mention-menu-icon">@</span>
+                    <span class="mention-menu-name">${Utils.escapeHtml(person)}</span>
+                </div>
+            `;
+        });
+
+        if (showCreateOption) {
+            const createIndex = filteredPeople.length;
+            menuHtml += `
+                <div class="mention-menu-item mention-menu-create ${createIndex === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-person="${Utils.escapeHtml(query)}">
+                    <span class="mention-menu-icon">+</span>
+                    <span class="mention-menu-name">Add @${Utils.escapeHtml(query)}</span>
+                </div>
+            `;
+        }
+
+        if (!menuHtml) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        this.mentionMenu.innerHTML = menuHtml;
+
+        this.mentionMenu.querySelectorAll(".mention-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const person = item.dataset.person;
+                this.executeMentionCommand(person);
+            });
+        });
+
+        const rect = element.getBoundingClientRect();
+        this.mentionMenu.style.top = `${rect.bottom + 5}px`;
+        this.mentionMenu.style.left = `${rect.left}px`;
+        this.mentionMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide mention menu
+     */
+    hideMentionMenu() {
+        this.mentionMenu.classList.add("hidden");
+        this.mentionQuery = "";
+    },
+
+    /**
+     * Update selection highlight in mention menu
+     */
+    updateMentionMenuSelection() {
+        const items = this.mentionMenu.querySelectorAll(".mention-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle("selected", index === this.mentionSelectedIndex);
+        });
+    },
+
+    /**
+     * Execute a mention command - insert person as clickable link
+     */
+    async executeMentionCommand(personName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+        if (!mentionMatch) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+        const beforeAt = text.substring(0, atIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        const mentionLink = `<a href="#" class="mention-link" data-person="${personName}">@${personName}</a>`;
+
+        paragraph.innerHTML = beforeAt + mentionLink + ' ' + afterCursor;
+
+        // Add person to allPeople if new
+        if (!this.allPeople.some(p => p.toLowerCase() === personName.toLowerCase())) {
+            this.allPeople.push(personName);
+            this.allPeople.sort();
+            await this.savePeopleToStorage();
+        }
+
+        this.moveCursorToEnd(paragraph);
+        this.hideMentionMenu();
+        await this.save();
+    },
+
+    /**
+     * Show modal with all occurrences of a person mention
+     */
+    async showMentionOccurrences(personName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const mentionRegex = new RegExp(`@${personName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (mentionRegex.test(plainText)) {
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const mentionIndex = plainText.toLowerCase().indexOf('@' + personName.toLowerCase());
+                            const start = Math.max(0, mentionIndex - 40);
+                            const end = Math.min(plainText.length, mentionIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    mentionRegex.lastIndex = 0;
+                }
+            });
+
+            let modalBody = `
+                <div class="mention-occurrences">
+                    <div class="mention-header">
+                        <span class="mention-badge">@${Utils.escapeHtml(personName)}</span>
+                        <span class="mention-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="mention-empty">No occurrences found for this person.</p>`;
+            } else {
+                modalBody += `<div class="mention-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="mention-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="mention-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="mention-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Person: @${personName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('.mention-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing mention occurrences:', error);
         }
     },
 

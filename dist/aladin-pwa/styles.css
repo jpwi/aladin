@@ -249,7 +249,8 @@ body.fallback-mode .app-container {
     gap: var(--spacing-sm);
 }
 
-.daily-note-btn {
+.daily-note-btn,
+.people-btn {
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -264,10 +265,16 @@ body.fallback-mode .app-container {
     transition: all var(--transition-fast);
 }
 
-.daily-note-btn:hover {
+.daily-note-btn:hover,
+.people-btn:hover {
     background: var(--accent-light);
     border-color: var(--accent-primary);
     color: var(--accent-hover);
+}
+
+.people-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
 }
 
 .search-container {
@@ -1099,6 +1106,324 @@ h6.ce-header {
         background-color: transparent;
         box-shadow: none;
     }
+}
+
+/* ========================================
+   Mention (@) Menu
+   ======================================== */
+
+.mention-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: mentionMenuIn 0.15s ease;
+}
+
+.mention-menu.hidden {
+    display: none;
+}
+
+@keyframes mentionMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mention-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.mention-menu-item:hover,
+.mention-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.mention-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #6366f1;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mention-menu-create .mention-menu-icon {
+    background: var(--accent-secondary);
+}
+
+.mention-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Mention Links
+   ======================================== */
+
+.mention-link {
+    display: inline;
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.mention-link:hover {
+    background: #6366f1;
+    color: white;
+}
+
+/* Dark theme mention colors */
+[data-theme="dark"] .mention-link {
+    background: #312e81;
+    color: #a5b4fc;
+}
+
+[data-theme="dark"] .mention-link:hover {
+    background: #6366f1;
+    color: white;
+}
+
+[data-theme="dark"] .mention-menu-icon {
+    background: #4f46e5;
+}
+
+/* ========================================
+   Mention Occurrences Modal
+   ======================================== */
+
+.mention-occurrences {
+    padding: var(--spacing-sm) 0;
+}
+
+.mention-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.mention-badge {
+    display: inline-block;
+    background: #6366f1;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mention-count {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.mention-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.mention-occurrence-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.mention-occurrence-item {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.mention-occurrence-item:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+}
+
+[data-theme="dark"] .mention-occurrence-item:hover {
+    background: #312e81;
+    border-color: #6366f1;
+}
+
+.mention-occurrence-section {
+    font-size: var(--font-size-sm);
+    color: #4338ca;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+[data-theme="dark"] .mention-occurrence-section {
+    color: #a5b4fc;
+}
+
+.mention-occurrence-context {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ========================================
+   People Manager Modal
+   ======================================== */
+
+.people-manager {
+    padding: var(--spacing-sm) 0;
+}
+
+.people-manager-header {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.people-manager-header input {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.people-manager-header input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.people-manager-header button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.people-manager-header button:hover {
+    background: #4f46e5;
+}
+
+.people-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.people-list-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.person-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.person-item:hover {
+    border-color: var(--border-color);
+}
+
+.person-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+}
+
+.person-name .person-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #6366f1;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.person-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.person-actions button {
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    transition: all 0.15s ease;
+}
+
+.person-actions button:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.person-actions button.delete-btn:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+[data-theme="dark"] .person-actions button.delete-btn:hover {
+    background: #450a0a;
+    border-color: #ef4444;
+    color: #f87171;
 }
 
 /* ========================================

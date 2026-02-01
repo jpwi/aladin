@@ -10,6 +10,7 @@ const Sidebar = {
     sidebar: null,
     themeToggle: null,
     dailyNoteBtn: null,
+    peopleBtn: null,
 
     // Heading index for search
     headingIndex: [],
@@ -28,6 +29,7 @@ const Sidebar = {
         this.sidebar = document.getElementById("sidebar");
         this.themeToggle = document.getElementById("theme-toggle");
         this.dailyNoteBtn = document.getElementById("daily-note-btn");
+        this.peopleBtn = document.getElementById("people-btn");
 
         this.setupSearch();
         this.setupResize();
@@ -35,6 +37,104 @@ const Sidebar = {
         this.setupHashNavigation();
         this.setupTheme();
         this.setupDailyNote();
+        this.setupPeopleManager();
+    },
+
+    /**
+     * Setup people manager functionality
+     */
+    setupPeopleManager() {
+        if (!this.peopleBtn) return;
+
+        this.peopleBtn.addEventListener("click", () => {
+            this.showPeopleManager();
+        });
+    },
+
+    /**
+     * Show people manager modal
+     */
+    async showPeopleManager() {
+        const people = Editor.allPeople || [];
+
+        let modalBody = `
+            <div class="people-manager">
+                <div class="people-manager-header">
+                    <input type="text" id="new-person-input" placeholder="Enter person name..." />
+                    <button id="add-person-btn">Add</button>
+                </div>
+                <div class="people-list" id="people-list">
+                    ${people.length === 0 ? '<p class="people-list-empty">No people added yet. Add someone using the input above or type @ in the editor.</p>' : ''}
+                    ${people.map(person => `
+                        <div class="person-item" data-person="${Utils.escapeHtml(person)}">
+                            <span class="person-name">
+                                <span class="person-icon">@</span>
+                                ${Utils.escapeHtml(person)}
+                            </span>
+                            <span class="person-actions">
+                                <button class="delete-btn" data-person="${Utils.escapeHtml(person)}">Delete</button>
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        Modal.show({
+            title: "Manage People",
+            allowClose: true,
+            body: modalBody,
+            footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+        });
+
+        // Setup event handlers after modal is shown
+        setTimeout(() => {
+            const input = document.getElementById('new-person-input');
+            const addBtn = document.getElementById('add-person-btn');
+            const peopleList = document.getElementById('people-list');
+
+            if (addBtn && input) {
+                addBtn.addEventListener('click', async () => {
+                    const name = input.value.trim();
+                    if (name && !Editor.allPeople.some(p => p.toLowerCase() === name.toLowerCase())) {
+                        Editor.allPeople.push(name);
+                        Editor.allPeople.sort();
+                        await Editor.savePeopleToStorage();
+                        Modal.hide();
+                        this.showPeopleManager();
+                    }
+                });
+
+                input.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        const name = input.value.trim();
+                        if (name && !Editor.allPeople.some(p => p.toLowerCase() === name.toLowerCase())) {
+                            Editor.allPeople.push(name);
+                            Editor.allPeople.sort();
+                            await Editor.savePeopleToStorage();
+                            Modal.hide();
+                            this.showPeopleManager();
+                        }
+                    }
+                });
+
+                input.focus();
+            }
+
+            // Setup delete handlers
+            if (peopleList) {
+                peopleList.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const personToDelete = btn.dataset.person;
+                        Editor.allPeople = Editor.allPeople.filter(p => p !== personToDelete);
+                        await Editor.savePeopleToStorage();
+                        Modal.hide();
+                        this.showPeopleManager();
+                    });
+                });
+            }
+        }, 100);
     },
 
     /**
