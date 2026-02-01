@@ -119,6 +119,104 @@ body {
 }
 
 /* ========================================
+   Fallback Mode Banner (Firefox/Safari)
+   ======================================== */
+
+.fallback-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border-bottom: 1px solid #ffc107;
+    font-size: var(--font-size-sm);
+    color: #856404;
+    animation: slideDown 0.3s ease-out;
+}
+
+.fallback-banner.hidden {
+    display: none;
+}
+
+.fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-bottom-color: #dc3545;
+    color: #721c24;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fallback-message {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+}
+
+.fallback-dismiss {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    padding: var(--spacing-xs);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.fallback-dismiss:hover {
+    opacity: 1;
+}
+
+/* Adjust app container when banner is visible */
+body.fallback-mode .app-container {
+    margin-top: 40px;
+    height: calc(100vh - 40px);
+}
+
+/* Dark mode banner */
+:root[data-theme="dark"] .fallback-banner {
+    background: linear-gradient(135deg, #3d3d00 0%, #4d4d00 100%);
+    border-bottom-color: #ffc107;
+    color: #ffc107;
+}
+
+:root[data-theme="dark"] .fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #4d1c24 0%, #5d2c34 100%);
+    border-bottom-color: #dc3545;
+    color: #f5c6cb;
+}
+
+/* ========================================
    App Container
    ======================================== */
 
@@ -2204,6 +2302,16 @@ h6.ce-header {
 </head>
 
 <body>
+    <!-- Fallback mode banner (shown in Firefox/Safari) -->
+    <div class="fallback-banner hidden" id="fallback-banner">
+        <span class="fallback-message">
+            📁 Your browser doesn't support auto-save to file. 
+            <button class="btn-link" id="fallback-save-btn">Save to file</button>
+            to keep your changes.
+        </span>
+        <button class="fallback-dismiss" id="fallback-dismiss" aria-label="Dismiss">×</button>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -2656,12 +2764,89 @@ const Vault = {
             console.warn(
                 "Vault: File System Access API not supported. Using fallback mode.",
             );
+            this.initFallbackUI();
         }
 
         // Initialize handle storage
         await this.initHandleStorage();
 
         return this;
+    },
+
+    /**
+     * Initialize the fallback mode UI for browsers without File System Access API
+     */
+    initFallbackUI() {
+        const banner = document.getElementById('fallback-banner');
+        const saveBtn = document.getElementById('fallback-save-btn');
+        const dismissBtn = document.getElementById('fallback-dismiss');
+
+        if (!banner) {
+            console.warn("Vault: Fallback banner element not found");
+            return;
+        }
+
+        // Add fallback mode class to body
+        document.body.classList.add('fallback-mode');
+
+        // Setup save button
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await this.exportVault();
+            });
+        }
+
+        // Setup dismiss button
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                banner.classList.add('hidden');
+                // Store dismissal in session (will show again on next vault open)
+                sessionStorage.setItem('fallback-banner-dismissed', 'true');
+            });
+        }
+
+        // Add beforeunload warning for unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (this.isDirty && !this.isLocked) {
+                e.preventDefault();
+                // Modern browsers ignore custom messages, but we still need to set returnValue
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    },
+
+    /**
+     * Show the fallback banner (called when vault is opened in fallback mode)
+     */
+    showFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+        
+        const banner = document.getElementById('fallback-banner');
+        const wasDismissed = sessionStorage.getItem('fallback-banner-dismissed');
+        
+        if (banner && !wasDismissed) {
+            banner.classList.remove('hidden');
+        }
+    },
+
+    /**
+     * Update fallback banner to show unsaved changes
+     */
+    updateFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+        
+        const banner = document.getElementById('fallback-banner');
+        if (!banner) return;
+
+        if (this.isDirty) {
+            banner.classList.add('has-unsaved');
+            // Show banner again if it was dismissed but there are unsaved changes
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.remove('has-unsaved');
+        }
     },
 
     /**
@@ -2956,6 +3141,9 @@ const Vault = {
         await this.saveToIndexedDB(vaultData);
 
         this.rememberVault("knowledge-base.aladin");
+        
+        // Show fallback banner to inform user about manual save
+        this.showFallbackBanner();
 
         return { success: true, name: "knowledge-base.aladin", fallback: true };
     },
@@ -3033,6 +3221,9 @@ const Vault = {
                     await this.saveToIndexedDB(data);
 
                     this.rememberVault(file.name);
+                    
+                    // Show fallback banner to inform user about manual save
+                    this.showFallbackBanner();
 
                     resolve({
                         success: true,
@@ -3073,6 +3264,8 @@ const Vault = {
             // Fallback: save to IndexedDB
             await this.saveToIndexedDB(vaultData);
             this.isDirty = true;
+            // Update banner to show unsaved state
+            this.updateFallbackBanner();
         }
 
         this.lastSaveTime = new Date();
@@ -3253,6 +3446,10 @@ const Vault = {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+
+            // Clear dirty flag since user has saved to file
+            this.isDirty = false;
+            this.updateFallbackBanner();
 
             return {
                 success: true,
@@ -6289,7 +6486,7 @@ const Editor = {
     // ==========================================
 
     /**
-     * Load existing tags from content blocks
+     * Load existing tags from content blocks and style them in DOM
      */
     loadTagsFromContent(blocks) {
         const tags = new Set();
@@ -6308,6 +6505,170 @@ const Editor = {
 
         this.allTags = Array.from(tags).sort();
         console.log('Loaded tags:', this.allTags);
+        
+        // Style hashtags in DOM after editor renders
+        setTimeout(() => this.styleHashtagsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain hashtags in DOM to styled links
+     * This ensures hashtags from previous sessions are styled correctly
+     */
+    styleHashtagsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+        
+        paragraphs.forEach(paragraph => {
+            // Skip if all hashtags are already properly styled
+            // Check if there are plain text hashtags (not inside hashtag-link elements)
+            const html = paragraph.innerHTML;
+            
+            // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
+            // Skip elements that only have properly styled hashtag-links
+            const hasUnstyledHashtags = this.hasUnstyledHashtags(paragraph);
+            
+            if (hasUnstyledHashtags) {
+                this.processHashtagsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled hashtags
+     */
+    hasUnstyledHashtags(element) {
+        // Check for <a> tags containing hashtags but without hashtag-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^#[a-zA-Z0-9_-]+$/.test(text) && !link.classList.contains('hashtag-link')) {
+                return true;
+            }
+        }
+        
+        // Get all text nodes that are NOT inside a hashtag-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+        
+        let node;
+        while (node = walker.nextNode()) {
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process hashtags in an element - handles both plain text and existing links
+     */
+    processHashtagsInElement(element) {
+        // First, clean up any empty links (from previous bugs)
+        const emptyLinks = element.querySelectorAll('a:empty');
+        emptyLinks.forEach(link => link.remove());
+        
+        // Remove links without meaningful text content
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+        
+        // Fix any <a> tags that contain hashtags but don't have the hashtag-link class
+        // This happens when Editor.js strips our custom class on save/load
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const hashMatch = text.match(/^#([a-zA-Z0-9_-]+)$/);
+            if (hashMatch && !link.classList.contains('hashtag-link')) {
+                // Add the hashtag-link class and data-tag attribute
+                link.classList.add('hashtag-link');
+                link.dataset.tag = hashMatch[1];
+                link.href = '#';
+            }
+        });
+        
+        // Now process only text nodes that are not inside existing hashtag-links
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag (they are handled above)
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+        
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            // Check if this text node contains a hashtag
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+        
+        // Process text nodes in reverse to avoid offset issues
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+            
+            if (tagRegex.test(text)) {
+                // Reset regex
+                tagRegex.lastIndex = 0;
+                
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+                
+                while ((match = tagRegex.exec(text)) !== null) {
+                    // Add text before the hashtag
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+                    
+                    // Create the hashtag link
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'hashtag-link';
+                    link.dataset.tag = match[1];
+                    link.textContent = '#' + match[1];
+                    fragment.appendChild(link);
+                    
+                    lastIndex = match.index + match[0].length;
+                }
+                
+                // Add remaining text after last hashtag
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+                
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
     },
 
     /**
@@ -6351,12 +6712,12 @@ const Editor = {
                 const query = this.hashtagQuery;
                 const showCreateOption = query && query.length > 0 && !this.allTags.includes(query);
                 const totalOptions = options.length + (showCreateOption ? 1 : 0);
-                
+
                 if (totalOptions > 0) {
                     e.preventDefault();
                     e.stopPropagation();
                     e.stopImmediatePropagation();
-                    
+
                     // If selected index is on the "create" option or options is empty
                     if (this.hashtagSelectedIndex >= options.length && showCreateOption) {
                         this.executeHashtagCommand(query);
@@ -6426,10 +6787,10 @@ const Editor = {
         // Look for # followed by optional word characters at the end of text or before cursor
         const cursorOffset = this.getCursorOffsetInElement(paragraph);
         const textBeforeCursor = text.substring(0, cursorOffset);
-        
+
         // Match # followed by optional tag characters at end
         const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
-        
+
         if (hashMatch) {
             this.hashtagQuery = hashMatch[1].toLowerCase();
             this.hashtagSelectedIndex = 0;
@@ -6445,12 +6806,12 @@ const Editor = {
     getCursorOffsetInElement(element) {
         const selection = window.getSelection();
         if (!selection.rangeCount) return 0;
-        
+
         const range = selection.getRangeAt(0);
         const preCaretRange = range.cloneRange();
         preCaretRange.selectNodeContents(element);
         preCaretRange.setEnd(range.endContainer, range.endOffset);
-        
+
         return preCaretRange.toString().length;
     },
 
@@ -6470,10 +6831,10 @@ const Editor = {
     showHashtagMenu(element) {
         const filteredTags = this.getFilteredHashtags();
         const query = this.hashtagQuery;
-        
+
         // If we have a query that's not an existing tag, show option to create it
         const showCreateOption = query && query.length > 0 && !this.allTags.includes(query.toLowerCase());
-        
+
         // If no filtered tags and no create option and no query, hide menu
         if (filteredTags.length === 0 && !showCreateOption) {
             this.hideHashtagMenu();
@@ -6482,7 +6843,7 @@ const Editor = {
 
         // Build menu HTML
         let menuHtml = '';
-        
+
         // Add existing tag suggestions
         filteredTags.forEach((tag, index) => {
             menuHtml += `
@@ -6493,7 +6854,7 @@ const Editor = {
                 </div>
             `;
         });
-        
+
         // Add "create new tag" option if query doesn't match existing
         if (showCreateOption) {
             const createIndex = filteredTags.length;
@@ -6505,7 +6866,7 @@ const Editor = {
                 </div>
             `;
         }
-        
+
         if (!menuHtml) {
             this.hideHashtagMenu();
             return;
@@ -6571,7 +6932,7 @@ const Editor = {
         const text = paragraph.textContent || "";
         const cursorOffset = this.getCursorOffsetInElement(paragraph);
         const textBeforeCursor = text.substring(0, cursorOffset);
-        
+
         const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
         if (!hashMatch) {
             this.hideHashtagMenu();
@@ -6584,7 +6945,7 @@ const Editor = {
 
         // Create the hashtag link HTML
         const tagLink = `<a href="#" class="hashtag-link" data-tag="${tagName}">#${tagName}</a>`;
-        
+
         // Update paragraph with the link
         paragraph.innerHTML = beforeHash + tagLink + ' ' + afterCursor;
 
@@ -6598,7 +6959,7 @@ const Editor = {
         this.moveCursorToEnd(paragraph);
 
         this.hideHashtagMenu();
-        
+
         // Trigger save
         await this.save();
     },
@@ -6636,7 +6997,7 @@ const Editor = {
                             const end = Math.min(plainText.length, tagIndex + 60);
                             context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
                         }
-                        
+
                         // Find parent heading for context
                         let parentHeading = 'Document';
                         for (let i = index - 1; i >= 0; i--) {
@@ -6645,7 +7006,7 @@ const Editor = {
                                 break;
                             }
                         }
-                        
+
                         occurrences.push({
                             blockId: block.id,
                             blockIndex: index,
@@ -6786,12 +7147,12 @@ const Editor = {
             this.draggedBlock = focusedBlock;
             this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
             focusedBlock.classList.add('dragging');
-            
+
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', 'block');
-            
+
             this.container.classList.add('block-dragging');
-            
+
             // Prevent text selection during drag
             document.body.style.userSelect = 'none';
         });
@@ -6805,10 +7166,10 @@ const Editor = {
             this.dropIndicator.classList.add('hidden');
             this.draggedBlock = null;
             this.draggedBlockIndex = null;
-            
+
             // Re-enable text selection
             document.body.style.userSelect = '';
-            
+
             // Remove all drag-over classes
             this.container.querySelectorAll('.ce-block').forEach(b => {
                 b.classList.remove('drag-over-top', 'drag-over-bottom');
@@ -6823,10 +7184,10 @@ const Editor = {
         // Use event delegation on the container for drop zones
         this.container.addEventListener('dragover', (e) => {
             if (!this.draggedBlock) return;
-            
+
             const block = e.target.closest('.ce-block');
             if (!block || this.draggedBlock === block) return;
-            
+
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
 
@@ -6844,7 +7205,7 @@ const Editor = {
 
             // Clear previous indicators on this block
             block.classList.remove('drag-over-top', 'drag-over-bottom');
-            
+
             // Add appropriate indicator
             if (isAbove) {
                 block.classList.add('drag-over-top');
@@ -6862,22 +7223,22 @@ const Editor = {
 
         this.container.addEventListener('drop', async (e) => {
             if (!this.draggedBlock) return;
-            
+
             const block = e.target.closest('.ce-block');
             if (!block || this.draggedBlock === block) return;
-            
+
             e.preventDefault();
 
             const fromIndex = this.draggedBlockIndex;
             const toBlockIndex = this.getBlockIndex(block);
-            
+
             // Determine if dropping above or below
             const rect = block.getBoundingClientRect();
             const midpoint = rect.top + rect.height / 2;
             const isAbove = e.clientY < midpoint;
-            
+
             let toIndex = isAbove ? toBlockIndex : toBlockIndex + 1;
-            
+
             // Adjust if moving down (since the block will be removed first)
             if (fromIndex < toIndex) {
                 toIndex--;
@@ -9534,7 +9895,7 @@ window.AIChat = AIChat;
 
 const App = {
     isInitialized: false,
-    
+
     // Demo mode constants for testing
     DEMO_MODE: false,
     DEMO_PASSWORD: "demo-test-password-123",
@@ -9548,7 +9909,7 @@ const App = {
         // Check for demo mode via URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         this.DEMO_MODE = urlParams.get("demo") === "true";
-        
+
         if (this.DEMO_MODE) {
             console.log("Demo mode enabled - using demo password");
         }
@@ -9609,14 +9970,14 @@ const App = {
      */
     async initializeDemoMode() {
         console.log("Initializing demo mode...");
-        
+
         // Set demo password in Vault for storage operations
         Vault.password = this.DEMO_PASSWORD;
         Vault.isLocked = false;
-        
+
         // Initialize with null data (will use default content)
         await this.initializeWithData(null);
-        
+
         console.log("Demo mode initialized successfully");
     },
 

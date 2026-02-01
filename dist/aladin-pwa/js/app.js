@@ -4,7 +4,7 @@
 
 const App = {
     isInitialized: false,
-    
+
     // Demo mode constants for testing
     DEMO_MODE: false,
     DEMO_PASSWORD: "demo-test-password-123",
@@ -18,7 +18,7 @@ const App = {
         // Check for demo mode via URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         this.DEMO_MODE = urlParams.get("demo") === "true";
-        
+
         if (this.DEMO_MODE) {
             console.log("Demo mode enabled - using demo password");
         }
@@ -79,14 +79,14 @@ const App = {
      */
     async initializeDemoMode() {
         console.log("Initializing demo mode...");
-        
+
         // Set demo password in Vault for storage operations
         Vault.password = this.DEMO_PASSWORD;
         Vault.isLocked = false;
-        
+
         // Initialize with null data (will use default content)
         await this.initializeWithData(null);
-        
+
         console.log("Demo mode initialized successfully");
     },
 

@@ -111,6 +111,104 @@ body {
 }
 
 /* ========================================
+   Fallback Mode Banner (Firefox/Safari)
+   ======================================== */
+
+.fallback-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border-bottom: 1px solid #ffc107;
+    font-size: var(--font-size-sm);
+    color: #856404;
+    animation: slideDown 0.3s ease-out;
+}
+
+.fallback-banner.hidden {
+    display: none;
+}
+
+.fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-bottom-color: #dc3545;
+    color: #721c24;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fallback-message {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+}
+
+.fallback-dismiss {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    padding: var(--spacing-xs);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.fallback-dismiss:hover {
+    opacity: 1;
+}
+
+/* Adjust app container when banner is visible */
+body.fallback-mode .app-container {
+    margin-top: 40px;
+    height: calc(100vh - 40px);
+}
+
+/* Dark mode banner */
+:root[data-theme="dark"] .fallback-banner {
+    background: linear-gradient(135deg, #3d3d00 0%, #4d4d00 100%);
+    border-bottom-color: #ffc107;
+    color: #ffc107;
+}
+
+:root[data-theme="dark"] .fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #4d1c24 0%, #5d2c34 100%);
+    border-bottom-color: #dc3545;
+    color: #f5c6cb;
+}
+
+/* ========================================
    App Container
    ======================================== */
 

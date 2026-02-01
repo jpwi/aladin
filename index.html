@@ -9,6 +9,16 @@
 </head>
 
 <body>
+    <!-- Fallback mode banner (shown in Firefox/Safari) -->
+    <div class="fallback-banner hidden" id="fallback-banner">
+        <span class="fallback-message">
+            📁 Your browser doesn't support auto-save to file. 
+            <button class="btn-link" id="fallback-save-btn">Save to file</button>
+            to keep your changes.
+        </span>
+        <button class="fallback-dismiss" id="fallback-dismiss" aria-label="Dismiss">×</button>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">

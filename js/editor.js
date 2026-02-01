@@ -981,7 +981,7 @@ const Editor = {
     // ==========================================
 
     /**
-     * Load existing tags from content blocks
+     * Load existing tags from content blocks and style them in DOM
      */
     loadTagsFromContent(blocks) {
         const tags = new Set();
@@ -1000,6 +1000,170 @@ const Editor = {
 
         this.allTags = Array.from(tags).sort();
         console.log('Loaded tags:', this.allTags);
+
+        // Style hashtags in DOM after editor renders
+        setTimeout(() => this.styleHashtagsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain hashtags in DOM to styled links
+     * This ensures hashtags from previous sessions are styled correctly
+     */
+    styleHashtagsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            // Skip if all hashtags are already properly styled
+            // Check if there are plain text hashtags (not inside hashtag-link elements)
+            const html = paragraph.innerHTML;
+
+            // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
+            // Skip elements that only have properly styled hashtag-links
+            const hasUnstyledHashtags = this.hasUnstyledHashtags(paragraph);
+
+            if (hasUnstyledHashtags) {
+                this.processHashtagsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled hashtags
+     */
+    hasUnstyledHashtags(element) {
+        // Check for <a> tags containing hashtags but without hashtag-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^#[a-zA-Z0-9_-]+$/.test(text) && !link.classList.contains('hashtag-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a hashtag-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process hashtags in an element - handles both plain text and existing links
+     */
+    processHashtagsInElement(element) {
+        // First, clean up any empty links (from previous bugs)
+        const emptyLinks = element.querySelectorAll('a:empty');
+        emptyLinks.forEach(link => link.remove());
+
+        // Remove links without meaningful text content
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix any <a> tags that contain hashtags but don't have the hashtag-link class
+        // This happens when Editor.js strips our custom class on save/load
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const hashMatch = text.match(/^#([a-zA-Z0-9_-]+)$/);
+            if (hashMatch && !link.classList.contains('hashtag-link')) {
+                // Add the hashtag-link class and data-tag attribute
+                link.classList.add('hashtag-link');
+                link.dataset.tag = hashMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Now process only text nodes that are not inside existing hashtag-links
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag (they are handled above)
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            // Check if this text node contains a hashtag
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse to avoid offset issues
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+            if (tagRegex.test(text)) {
+                // Reset regex
+                tagRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = tagRegex.exec(text)) !== null) {
+                    // Add text before the hashtag
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    // Create the hashtag link
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'hashtag-link';
+                    link.dataset.tag = match[1];
+                    link.textContent = '#' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                // Add remaining text after last hashtag
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
     },
 
     /**

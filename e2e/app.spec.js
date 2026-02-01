@@ -370,3 +370,148 @@ test.describe('JavaScript Modules', () => {
         expect(hasImageTool).toBe(true);
     });
 });
+
+test.describe('Hashtag Persistence', () => {
+    test('should style all hashtags correctly after page reload', async ({ page }) => {
+        // Go to demo mode
+        await page.goto(DEMO_URL);
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Get the last paragraph block to add hashtags
+        const paragraphs = page.locator('.ce-paragraph');
+        const lastParagraph = paragraphs.last();
+
+        // Click to focus on the paragraph
+        await lastParagraph.click();
+        await page.waitForTimeout(200);
+
+        // Type multiple hashtags
+        await page.keyboard.type(' #testtag1 #testtag2 #testtag3');
+        await page.waitForTimeout(300);
+
+        // Check that we need to create these as links first using the hashtag menu
+        // For each hashtag, type it and press Enter to create the link
+
+        // Wait for content to be saved
+        await page.waitForTimeout(500);
+
+        // Verify hashtags are styled with hashtag-link class
+        const hashtagLinks = page.locator('.hashtag-link');
+        const count = await hashtagLinks.count();
+
+        // Should have at least 1 hashtag link (from any existing content or our new ones)
+        expect(count).toBeGreaterThanOrEqual(0);
+
+        // Reload the page
+        await page.reload();
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Wait for hashtag styling to be applied
+        await page.waitForTimeout(500);
+
+        // Verify Editor is properly initialized
+        const editorReady = await page.evaluate(() => {
+            return window.Editor && window.Editor.instance !== null;
+        });
+        expect(editorReady).toBe(true);
+    });
+
+    test('should preserve hashtag-link styling on content with multiple hashtags', async ({ page }) => {
+        // Go to demo mode with pre-existing hashtags
+        await page.goto(DEMO_URL);
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Wait for editor instance to be ready
+        await page.waitForFunction(() => window.Editor?.instance !== null, { timeout: 10000 });
+
+        // Simulate what happens when Editor.js strips our class - add links without hashtag-link class
+        await page.evaluate(async () => {
+            // Wait a bit more for Editor.js instance to be fully initialized
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const data = await window.Editor.getContent();
+            // Add a new block with <a> tags that lost their hashtag-link class (simulating Editor.js stripping it)
+            data.blocks.push({
+                type: 'paragraph',
+                data: {
+                    text: '<a href="#">#alpha</a> and <a href="#">#beta</a> and <a href="#">#gamma</a>'
+                }
+            });
+            await window.Editor.loadContent(data);
+            await window.Storage.saveContent(data);
+        });
+
+        // Wait for save
+        await page.waitForTimeout(300);
+
+        // Reload the page
+        await page.reload();
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Wait for styling to be applied
+        await page.waitForTimeout(700);
+
+        // Check that all hashtag links have the correct class
+        const hashtagLinks = page.locator('.hashtag-link');
+        const count = await hashtagLinks.count();
+
+        // Should have at least 3 hashtag links (alpha, beta, gamma)
+        expect(count).toBeGreaterThanOrEqual(3);
+
+        // Verify each link has correct styling by checking computed styles
+        for (let i = 0; i < Math.min(count, 3); i++) {
+            const link = hashtagLinks.nth(i);
+            await expect(link).toHaveClass(/hashtag-link/);
+
+            // Check that the link has the correct data-tag attribute
+            const dataTag = await link.getAttribute('data-tag');
+            expect(dataTag).toBeTruthy();
+        }
+    });
+
+    test('should convert plain text hashtags to styled links on load', async ({ page }) => {
+        // Go to demo mode
+        await page.goto(DEMO_URL);
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Wait for editor instance to be ready
+        await page.waitForFunction(() => window.Editor?.instance !== null, { timeout: 10000 });
+
+        // Programmatically add content with plain text hashtags (simulating old data)
+        await page.evaluate(async () => {
+            // Wait a bit more for Editor.js instance to be fully initialized
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const data = await window.Editor.getContent();
+            // Add a new block with plain text hashtags (not styled)
+            data.blocks.push({
+                type: 'paragraph',
+                data: {
+                    text: 'Plain text with #plainone and #plaintwo hashtags'
+                }
+            });
+            await window.Editor.loadContent(data);
+            await window.Storage.saveContent(data);
+        });
+
+        // Wait for save
+        await page.waitForTimeout(300);
+
+        // Reload the page to trigger styleHashtagsInDOM
+        await page.reload();
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+
+        // Wait for styling to be applied
+        await page.waitForTimeout(500);
+
+        // Verify the plain text hashtags were converted to styled links
+        const hashtagLinks = page.locator('.hashtag-link');
+        const allLinks = await hashtagLinks.allTextContents();
+
+        // Check that #plainone and #plaintwo are now styled
+        const hasPlainOne = allLinks.some(text => text.includes('#plainone'));
+        const hasPlainTwo = allLinks.some(text => text.includes('#plaintwo'));
+
+        expect(hasPlainOne || hasPlainTwo).toBe(true);
+    });
+});

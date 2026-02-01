@@ -43,12 +43,89 @@ const Vault = {
             console.warn(
                 "Vault: File System Access API not supported. Using fallback mode.",
             );
+            this.initFallbackUI();
         }
 
         // Initialize handle storage
         await this.initHandleStorage();
 
         return this;
+    },
+
+    /**
+     * Initialize the fallback mode UI for browsers without File System Access API
+     */
+    initFallbackUI() {
+        const banner = document.getElementById('fallback-banner');
+        const saveBtn = document.getElementById('fallback-save-btn');
+        const dismissBtn = document.getElementById('fallback-dismiss');
+
+        if (!banner) {
+            console.warn("Vault: Fallback banner element not found");
+            return;
+        }
+
+        // Add fallback mode class to body
+        document.body.classList.add('fallback-mode');
+
+        // Setup save button
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await this.exportVault();
+            });
+        }
+
+        // Setup dismiss button
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                banner.classList.add('hidden');
+                // Store dismissal in session (will show again on next vault open)
+                sessionStorage.setItem('fallback-banner-dismissed', 'true');
+            });
+        }
+
+        // Add beforeunload warning for unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (this.isDirty && !this.isLocked) {
+                e.preventDefault();
+                // Modern browsers ignore custom messages, but we still need to set returnValue
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    },
+
+    /**
+     * Show the fallback banner (called when vault is opened in fallback mode)
+     */
+    showFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+        
+        const banner = document.getElementById('fallback-banner');
+        const wasDismissed = sessionStorage.getItem('fallback-banner-dismissed');
+        
+        if (banner && !wasDismissed) {
+            banner.classList.remove('hidden');
+        }
+    },
+
+    /**
+     * Update fallback banner to show unsaved changes
+     */
+    updateFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+        
+        const banner = document.getElementById('fallback-banner');
+        if (!banner) return;
+
+        if (this.isDirty) {
+            banner.classList.add('has-unsaved');
+            // Show banner again if it was dismissed but there are unsaved changes
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.remove('has-unsaved');
+        }
     },
 
     /**
@@ -343,6 +420,9 @@ const Vault = {
         await this.saveToIndexedDB(vaultData);
 
         this.rememberVault("knowledge-base.aladin");
+        
+        // Show fallback banner to inform user about manual save
+        this.showFallbackBanner();
 
         return { success: true, name: "knowledge-base.aladin", fallback: true };
     },
@@ -420,6 +500,9 @@ const Vault = {
                     await this.saveToIndexedDB(data);
 
                     this.rememberVault(file.name);
+                    
+                    // Show fallback banner to inform user about manual save
+                    this.showFallbackBanner();
 
                     resolve({
                         success: true,
@@ -460,6 +543,8 @@ const Vault = {
             // Fallback: save to IndexedDB
             await this.saveToIndexedDB(vaultData);
             this.isDirty = true;
+            // Update banner to show unsaved state
+            this.updateFallbackBanner();
         }
 
         this.lastSaveTime = new Date();
@@ -640,6 +725,10 @@ const Vault = {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+
+            // Clear dirty flag since user has saved to file
+            this.isDirty = false;
+            this.updateFallbackBanner();
 
             return {
                 success: true,
