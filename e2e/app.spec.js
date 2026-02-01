@@ -522,3 +522,182 @@ test.describe('Hashtag Persistence', () => {
         expect(hasPlainOne || hasPlainTwo).toBe(true);
     });
 });
+
+test.describe('Code Block Language Detection', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto(DEMO_URL);
+        await page.waitForFunction(() => window.App?.isInitialized, { timeout: 10000 });
+    });
+
+    test('should have CodeBlockTool available with resolveLanguage method', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            return {
+                exists: typeof window.CodeBlockTool !== 'undefined',
+                hasResolveLanguage: typeof window.CodeBlockTool?.resolveLanguage === 'function',
+                hasLanguageAliases: typeof window.CodeBlockTool?.languageAliases === 'object'
+            };
+        });
+        
+        expect(result.exists).toBe(true);
+        expect(result.hasResolveLanguage).toBe(true);
+        expect(result.hasLanguageAliases).toBe(true);
+    });
+
+    test('should resolve common JavaScript aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                js: resolve('js'),
+                node: resolve('node'),
+                nodejs: resolve('nodejs'),
+                javascript: resolve('javascript')
+            };
+        });
+        
+        expect(results.js).toBe('javascript');
+        expect(results.node).toBe('javascript');
+        expect(results.nodejs).toBe('javascript');
+        expect(results.javascript).toBe('javascript');
+    });
+
+    test('should resolve Python aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                py: resolve('py'),
+                python: resolve('python'),
+                python3: resolve('python3'),
+                py3: resolve('py3')
+            };
+        });
+        
+        expect(results.py).toBe('python');
+        expect(results.python).toBe('python');
+        expect(results.python3).toBe('python');
+        expect(results.py3).toBe('python');
+    });
+
+    test('should resolve TypeScript aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                ts: resolve('ts'),
+                typescript: resolve('typescript')
+            };
+        });
+        
+        expect(results.ts).toBe('typescript');
+        expect(results.typescript).toBe('typescript');
+    });
+
+    test('should resolve shell/bash aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                sh: resolve('sh'),
+                shell: resolve('shell'),
+                zsh: resolve('zsh'),
+                bash: resolve('bash')
+            };
+        });
+        
+        expect(results.sh).toBe('bash');
+        expect(results.shell).toBe('bash');
+        expect(results.zsh).toBe('bash');
+        expect(results.bash).toBe('bash');
+    });
+
+    test('should resolve C/C++/C# aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                c: resolve('c'),
+                cpp: resolve('cpp'),
+                'c++': resolve('c++'),
+                cs: resolve('cs'),
+                csharp: resolve('csharp')
+            };
+        });
+        
+        expect(results.c).toBe('c');
+        expect(results.cpp).toBe('cpp');
+        expect(results['c++']).toBe('cpp');
+        expect(results.cs).toBe('csharp');
+        expect(results.csharp).toBe('csharp');
+    });
+
+    test('should resolve Rust and Go aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                rs: resolve('rs'),
+                rust: resolve('rust'),
+                golang: resolve('golang'),
+                go: resolve('go')
+            };
+        });
+        
+        expect(results.rs).toBe('rust');
+        expect(results.rust).toBe('rust');
+        expect(results.golang).toBe('go');
+        expect(results.go).toBe('go');
+    });
+
+    test('should resolve plain text aliases', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                text: resolve('text'),
+                txt: resolve('txt'),
+                plain: resolve('plain'),
+                none: resolve('none'),
+                empty: resolve('')
+            };
+        });
+        
+        expect(results.text).toBe('plaintext');
+        expect(results.txt).toBe('plaintext');
+        expect(results.plain).toBe('plaintext');
+        expect(results.none).toBe('plaintext');
+    });
+
+    test('should default to javascript when no language specified', async ({ page }) => {
+        const result = await page.evaluate(() => {
+            return window.CodeBlockTool.resolveLanguage(null);
+        });
+        
+        expect(result).toBe('javascript');
+    });
+
+    test('should pass through unknown languages as-is', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                unknown: resolve('someunknownlang'),
+                haskell: resolve('haskell'),
+                elixir: resolve('elixir')
+            };
+        });
+        
+        expect(results.unknown).toBe('someunknownlang');
+        expect(results.haskell).toBe('haskell');
+        expect(results.elixir).toBe('elixir');
+    });
+
+    test('should be case-insensitive for language resolution', async ({ page }) => {
+        const results = await page.evaluate(() => {
+            const resolve = window.CodeBlockTool.resolveLanguage;
+            return {
+                PY: resolve('PY'),
+                Python: resolve('Python'),
+                JAVASCRIPT: resolve('JAVASCRIPT'),
+                Ts: resolve('Ts')
+            };
+        });
+        
+        expect(results.PY).toBe('python');
+        expect(results.Python).toBe('python');
+        expect(results.JAVASCRIPT).toBe('javascript');
+        expect(results.Ts).toBe('typescript');
+    });
+});

@@ -1550,17 +1550,22 @@ h6.ce-header {
     user-select: none;
     padding-right: 8px;
     text-align: right;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
 }
 
 .code-block-container .line-numbers-rows > span {
     display: block;
     counter-increment: linenumber;
+    height: calc(14px * 1.6);
 }
 
 .code-block-container .line-numbers-rows > span::before {
     content: counter(linenumber);
     color: #505050;
     font-size: 12px;
+    line-height: calc(14px * 1.6);
 }
 
 /* Light theme adjustments */

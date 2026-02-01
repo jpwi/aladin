@@ -434,7 +434,11 @@ const Editor = {
             if (codeMatch) {
                 e.preventDefault();
 
-                const language = codeMatch[1] || 'javascript';
+                // Resolve language alias to canonical name
+                const languageAlias = codeMatch[1] || '';
+                const language = typeof CodeBlockTool !== 'undefined' && CodeBlockTool.resolveLanguage
+                    ? CodeBlockTool.resolveLanguage(languageAlias)
+                    : (languageAlias || 'javascript');
 
                 // Get current block index
                 const blocks = this.container.querySelectorAll(".ce-block");

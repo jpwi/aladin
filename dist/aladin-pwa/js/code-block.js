@@ -15,6 +15,94 @@ class CodeBlockTool {
     }
 
     /**
+     * Language alias mapping - maps common aliases to Prism language names
+     */
+    static get languageAliases() {
+        return {
+            // JavaScript
+            'js': 'javascript',
+            'node': 'javascript',
+            'nodejs': 'javascript',
+            // TypeScript
+            'ts': 'typescript',
+            // Python
+            'py': 'python',
+            'python3': 'python',
+            'py3': 'python',
+            // C/C++
+            'c++': 'cpp',
+            'cplusplus': 'cpp',
+            'h': 'c',
+            'hpp': 'cpp',
+            // C#
+            'cs': 'csharp',
+            'c#': 'csharp',
+            'dotnet': 'csharp',
+            // Shell/Bash
+            'sh': 'bash',
+            'shell': 'bash',
+            'zsh': 'bash',
+            // PowerShell
+            'ps': 'powershell',
+            'ps1': 'powershell',
+            'pwsh': 'powershell',
+            // Web
+            'htm': 'html',
+            'vue': 'html',
+            'jsx': 'javascript',
+            'tsx': 'typescript',
+            'less': 'css',
+            'sass': 'scss',
+            // Data formats
+            'yml': 'yaml',
+            // Go
+            'golang': 'go',
+            // Ruby
+            'rb': 'ruby',
+            // Rust
+            'rs': 'rust',
+            // Kotlin
+            'kt': 'kotlin',
+            'kts': 'kotlin',
+            // Swift
+            'swift': 'swift',
+            // Docker
+            'dockerfile': 'docker',
+            // Plain text
+            'text': 'plaintext',
+            'txt': 'plaintext',
+            'plain': 'plaintext',
+            'none': 'plaintext',
+            '': 'plaintext'
+        };
+    }
+
+    /**
+     * Resolve a language alias to the canonical Prism language name
+     * @param {string} alias - The language alias (e.g., 'py', 'js', 'ts')
+     * @returns {string} - The canonical language name (e.g., 'python', 'javascript')
+     */
+    static resolveLanguage(alias) {
+        if (!alias) return 'javascript'; // Default
+        
+        const normalized = alias.toLowerCase().trim();
+        
+        // Check if it's an alias
+        if (CodeBlockTool.languageAliases[normalized]) {
+            return CodeBlockTool.languageAliases[normalized];
+        }
+        
+        // Check if it's already a valid language from our list
+        const validLanguages = CodeBlockTool.languages.map(l => l.value);
+        if (validLanguages.includes(normalized)) {
+            return normalized;
+        }
+        
+        // Return as-is (Prism might support it directly)
+        return normalized;
+    }
+
+    /**
      * Available languages for the dropdown
      */
     static get languages() {
@@ -150,9 +238,19 @@ class CodeBlockTool {
             this.codeElement.spellcheck = false;
             this.codeElement.textContent = this.data.code;
 
-            // Handle input
+            // Debounce timer for syntax highlighting
+            let highlightTimeout = null;
+
+            // Handle input - update line numbers in real-time, debounce highlighting
             this.codeElement.addEventListener('input', () => {
                 this.data.code = this.codeElement.textContent;
+                this.updateLineNumbers();
+                
+                // Debounced syntax highlighting (500ms after last keystroke)
+                clearTimeout(highlightTimeout);
+                highlightTimeout = setTimeout(() => {
+                    this.highlightCodePreserveCursor();
+                }, 500);
             });
 
             // Handle paste - strip formatting
@@ -161,18 +259,44 @@ class CodeBlockTool {
                 const text = e.clipboardData.getData('text/plain');
                 document.execCommand('insertText', false, text);
                 this.data.code = this.codeElement.textContent;
+                this.updateLineNumbers();
             });
 
-            // Handle Tab key for indentation
+            // Handle key events
             this.codeElement.addEventListener('keydown', (e) => {
+                // Tab key for indentation
                 if (e.key === 'Tab') {
                     e.preventDefault();
+                    e.stopPropagation();
                     document.execCommand('insertText', false, '  ');
+                }
+                // Enter key - update line numbers immediately
+                if (e.key === 'Enter') {
+                    setTimeout(() => this.updateLineNumbers(), 0);
+                }
+                // Prevent backspace from deleting the block when cursor is at start
+                // but still allow deleting content
+                if (e.key === 'Backspace') {
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        // Only stop propagation if at the very beginning and nothing to delete
+                        if (range.startOffset === 0 && range.collapsed && 
+                            range.startContainer === this.codeElement ||
+                            range.startContainer === this.codeElement.firstChild && range.startOffset === 0) {
+                            e.stopPropagation();
+                        }
+                    }
+                }
+                // Prevent arrow key navigation from leaving the block
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.stopPropagation();
                 }
             });
 
-            // Handle blur to re-highlight
+            // Handle blur to re-highlight with syntax coloring
             this.codeElement.addEventListener('blur', () => {
+                clearTimeout(highlightTimeout);
                 this.highlightCode();
             });
 
@@ -188,10 +312,54 @@ class CodeBlockTool {
         this.wrapper.appendChild(header);
         this.wrapper.appendChild(codeContainer);
 
-        // Initial highlight
-        setTimeout(() => this.highlightCode(), 0);
+        // Initial highlight and line numbers
+        setTimeout(() => {
+            this.highlightCode();
+            this.updateLineNumbers();
+        }, 0);
 
         return this.wrapper;
+    }
+
+    /**
+     * Update line numbers without re-highlighting (preserves cursor position)
+     */
+    updateLineNumbers() {
+        if (!this.wrapper) return;
+        
+        const pre = this.wrapper.querySelector('pre');
+        if (!pre) return;
+        
+        const code = this.codeElement?.textContent || '';
+        const lines = code.split('\n');
+        // Always show at least 1 line number
+        const lineCount = Math.max(1, lines.length);
+        
+        // Find or create line numbers element
+        let lineNumbersRows = pre.querySelector('.line-numbers-rows');
+        
+        if (!lineNumbersRows) {
+            lineNumbersRows = document.createElement('span');
+            lineNumbersRows.className = 'line-numbers-rows';
+            lineNumbersRows.setAttribute('aria-hidden', 'true');
+            pre.appendChild(lineNumbersRows);
+        }
+        
+        // Update line numbers
+        const currentSpans = lineNumbersRows.children.length;
+        
+        if (currentSpans < lineCount) {
+            // Add more line number spans
+            for (let i = currentSpans; i < lineCount; i++) {
+                const span = document.createElement('span');
+                lineNumbersRows.appendChild(span);
+            }
+        } else if (currentSpans > lineCount) {
+            // Remove extra spans
+            while (lineNumbersRows.children.length > lineCount) {
+                lineNumbersRows.removeChild(lineNumbersRows.lastChild);
+            }
+        }
     }
 
     /**
@@ -219,6 +387,83 @@ class CodeBlockTool {
         if (typeof Prism !== 'undefined') {
             Prism.highlightElement(this.codeElement);
         }
+    }
+
+    /**
+     * Apply syntax highlighting while preserving cursor position
+     */
+    highlightCodePreserveCursor() {
+        if (!this.codeElement) return;
+        
+        // Save cursor position as text offset
+        const selection = window.getSelection();
+        let cursorOffset = 0;
+        
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            // Calculate the text offset from the beginning of the code element
+            const preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(this.codeElement);
+            preCaretRange.setEnd(range.startContainer, range.startOffset);
+            cursorOffset = preCaretRange.toString().length;
+        }
+        
+        // Get current code content
+        const code = this.codeElement.textContent;
+        this.data.code = code;
+        
+        // Update class for Prism
+        this.codeElement.className = `language-${this.data.language}`;
+        
+        // Apply Prism highlighting
+        if (typeof Prism !== 'undefined') {
+            Prism.highlightElement(this.codeElement);
+        }
+        
+        // Restore cursor position
+        this.restoreCursorPosition(cursorOffset);
+    }
+
+    /**
+     * Restore cursor position after highlighting
+     */
+    restoreCursorPosition(targetOffset) {
+        if (!this.codeElement) return;
+        
+        const walker = document.createTreeWalker(
+            this.codeElement,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let currentOffset = 0;
+        let node = null;
+        
+        while ((node = walker.nextNode())) {
+            const nodeLength = node.textContent.length;
+            if (currentOffset + nodeLength >= targetOffset) {
+                // Found the node containing our offset
+                const range = document.createRange();
+                const selection = window.getSelection();
+                
+                range.setStart(node, targetOffset - currentOffset);
+                range.collapse(true);
+                
+                selection.removeAllRanges();
+                selection.addRange(range);
+                return;
+            }
+            currentOffset += nodeLength;
+        }
+        
+        // If we couldn't find the exact position, put cursor at the end
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(this.codeElement);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 
     /**
@@ -299,12 +544,12 @@ class CodeBlockTool {
             this.data.code = data.textContent;
             const langClass = data.className?.match(/language-(\w+)/);
             if (langClass) {
-                this.data.language = langClass[1];
+                this.data.language = CodeBlockTool.resolveLanguage(langClass[1]);
             }
         } else if (event.type === 'pattern') {
             // Handle fenced code blocks from markdown
             const match = data.match;
-            this.data.language = match[1] || 'plaintext';
+            this.data.language = CodeBlockTool.resolveLanguage(match[1] || '');
             this.data.code = match[2] || '';
         }
 
