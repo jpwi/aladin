@@ -1802,7 +1802,7 @@ const Editor = {
                 e.preventDefault();
                 e.stopPropagation();
                 const options = this.getFilteredPeople();
-                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 && 
+                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 &&
                     !this.allPeople.some(p => p.toLowerCase() === this.mentionQuery.toLowerCase());
                 const totalOptions = options.length + (showCreateOption ? 1 : 0);
                 this.mentionSelectedIndex = Math.min(this.mentionSelectedIndex + 1, totalOptions - 1);
@@ -1815,7 +1815,7 @@ const Editor = {
             } else if (e.key === "Enter" || e.key === "Tab") {
                 const options = this.getFilteredPeople();
                 const query = this.mentionQuery;
-                const showCreateOption = query && query.length > 0 && 
+                const showCreateOption = query && query.length > 0 &&
                     !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
                 const totalOptions = options.length + (showCreateOption ? 1 : 0);
 
@@ -1913,7 +1913,7 @@ const Editor = {
         const filteredPeople = this.getFilteredPeople();
         const query = this.mentionQuery;
 
-        const showCreateOption = query && query.length > 0 && 
+        const showCreateOption = query && query.length > 0 &&
             !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
 
         if (filteredPeople.length === 0 && !showCreateOption) {
