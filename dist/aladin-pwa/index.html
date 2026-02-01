@@ -1,68 +1,110 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Aladin - Local Knowledge Base</title>
-        <link rel="stylesheet" href="styles.css" />
-    
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aladin - Local Knowledge Base</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+        // Apply saved theme immediately to prevent flash of wrong theme on password overlay
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6c5ce7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
-    <body>
-        <div class="app-container">
-            <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
+
+<body>
+    <!-- Fallback mode banner (shown in Firefox/Safari) -->
+    <div class="fallback-banner hidden" id="fallback-banner">
+        <span class="fallback-message">
+            📁 Your browser doesn't support auto-save to file.
+            <button class="btn-link" id="fallback-save-btn">Save to file</button>
+            to keep your changes.
+        </span>
+        <button class="fallback-dismiss" id="fallback-dismiss" aria-label="Dismiss">×</button>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-actions-row">
+                    <button class="daily-note-btn" id="daily-note-btn" title="Create daily note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
+                    <button class="people-btn" id="people-btn" title="Manage people">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </button>
                     <div class="search-container">
-                        <input
-                            type="text"
-                            id="search-input"
-                            placeholder="Search headings..."
-                            autocomplete="off"
-                        />
-                        <ul
-                            class="search-results hidden"
-                            id="search-results"
-                        ></ul>
+                        <input type="text" id="search-input" placeholder="Search headings..." autocomplete="off" />
+                        <ul class="search-results hidden" id="search-results"></ul>
                     </div>
                 </div>
-                <nav class="sidebar-nav" id="sidebar-nav">
-                    <ul class="tree" id="heading-tree"></ul>
-                </nav>
-                <div class="resize-handle" id="resize-handle"></div>
-            </aside>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <ul class="tree" id="heading-tree"></ul>
+            </nav>
+            <div class="resize-handle" id="resize-handle"></div>
+        </aside>
 
-            <!-- Main Editor Area -->
-            <main class="main-editor" id="main-editor">
-                <div class="editor-container">
-                    <div id="editorjs"></div>
-                </div>
-            </main>
-        </div>
+        <!-- Main Editor Area -->
+        <main class="main-editor" id="main-editor">
+            <div class="editor-container">
+                <div id="editorjs"></div>
+            </div>
+        </main>
+    </div>
 
-        <!-- Editor.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+    <!-- Prism.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
-        <!-- App Scripts -->
-        <script src="js/utils.js"></script>
-        <script src="js/crypto.js"></script>
-        <script src="js/vault.js"></script>
-        <script src="js/modal.js"></script>
-        <script src="js/storage.js"></script>
-        <script src="js/file-handler.js"></script>
-        <script src="js/sidebar.js"></script>
-        <script src="js/editor.js"></script>
-        <script src="js/ai.js"></script>
-        <script src="js/ai-chat.js"></script>
-        <script src="js/app.js"></script>
-    
+    <!-- Editor.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/vault.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/file-handler.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/code-block.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/ai-chat.js"></script>
+    <script src="js/app.js"></script>
+
 <script>
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
@@ -72,4 +114,5 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 </body>
+
 </html>

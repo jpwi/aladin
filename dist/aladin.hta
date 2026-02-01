@@ -23,10 +23,10 @@
     WINDOWSTATE="normal"
 />
 
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Aladin Portable - Local Knowledge Base</title>
-        <style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aladin Portable - Local Knowledge Base</title>
+    <style>
 /* ========================================
    Aladin - Local Knowledge Base Styles
    ======================================== */
@@ -84,6 +84,36 @@
     --transition-base: 200ms ease;
 }
 
+/* Dark Theme */
+:root[data-theme="dark"] {
+    /* Dark backgrounds */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #333333;
+
+    /* Light text */
+    --text-primary: #f5f5f5;
+    --text-secondary: #cccccc;
+    --text-muted: #888888;
+
+    /* Adjusted accents for dark mode */
+    --accent-primary: #7dd3c0;
+    --accent-secondary: #a8e6cf;
+    --accent-tertiary: #88d8c0;
+    --accent-light: #1a2a25;
+    --accent-hover: #5cc4b0;
+    --accent-focus: #4db8a4;
+
+    /* Dark borders */
+    --border-color: #444444;
+    --border-light: #555555;
+
+    /* Dark shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
 /* ========================================
    Reset & Base Styles
    ======================================== */
@@ -107,6 +137,104 @@ body {
     color: var(--text-primary);
     background-color: var(--bg-primary);
     overflow: hidden;
+}
+
+/* ========================================
+   Fallback Mode Banner (Firefox/Safari)
+   ======================================== */
+
+.fallback-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border-bottom: 1px solid #ffc107;
+    font-size: var(--font-size-sm);
+    color: #856404;
+    animation: slideDown 0.3s ease-out;
+}
+
+.fallback-banner.hidden {
+    display: none;
+}
+
+.fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-bottom-color: #dc3545;
+    color: #721c24;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.fallback-message {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+}
+
+.fallback-dismiss {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: inherit;
+    padding: var(--spacing-xs);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.fallback-dismiss:hover {
+    opacity: 1;
+}
+
+/* Adjust app container when banner is visible */
+body.fallback-mode .app-container {
+    margin-top: 40px;
+    height: calc(100vh - 40px);
+}
+
+/* Dark mode banner */
+:root[data-theme="dark"] .fallback-banner {
+    background: linear-gradient(135deg, #3d3d00 0%, #4d4d00 100%);
+    border-bottom-color: #ffc107;
+    color: #ffc107;
+}
+
+:root[data-theme="dark"] .fallback-banner.has-unsaved {
+    background: linear-gradient(135deg, #4d1c24 0%, #5d2c34 100%);
+    border-bottom-color: #dc3545;
+    color: #f5c6cb;
 }
 
 /* ========================================
@@ -143,8 +271,43 @@ body {
     flex-shrink: 0;
 }
 
-/* Search */
+/* Sidebar Header - Actions Row */
+.sidebar-actions-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.daily-note-btn,
+.people-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.daily-note-btn:hover,
+.people-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+    color: var(--accent-hover);
+}
+
+.people-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
 .search-container {
+    flex: 1;
     position: relative;
 }
 
@@ -579,6 +742,86 @@ h6.ce-header {
 }
 
 /* ========================================
+   Block Drag & Drop
+   ======================================== */
+
+/* Enhanced toolbar settings button for drag */
+.ce-toolbar__settings-btn[data-drag-enhanced="true"] {
+    cursor: grab !important;
+}
+
+.ce-toolbar__settings-btn[data-drag-enhanced="true"]:active {
+    cursor: grabbing !important;
+}
+
+/* Block being dragged */
+.ce-block.dragging {
+    opacity: 0.5;
+    background: var(--accent-light);
+    border-radius: 6px;
+}
+
+/* Drop indicator lines */
+.ce-block.drag-over-top {
+    position: relative;
+}
+
+.ce-block.drag-over-top::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+.ce-block.drag-over-bottom {
+    position: relative;
+}
+
+.ce-block.drag-over-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    z-index: 100;
+}
+
+/* Container styling when dragging is active */
+.block-dragging .ce-block {
+    transition: transform 0.2s ease;
+}
+
+/* Prevent text selection during drag */
+.block-dragging {
+    user-select: none;
+}
+
+/* Drop indicator element (floating line) */
+.block-drop-indicator {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--accent-primary);
+    pointer-events: none;
+    z-index: 1001;
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.block-drop-indicator.hidden {
+    display: none;
+}
+
+/* ========================================
    Slash Command Menu
    ======================================== */
 
@@ -604,6 +847,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -648,6 +892,805 @@ h6.ce-header {
     font-size: 12px;
     color: var(--text-muted);
     font-family: var(--font-mono);
+}
+
+/* ========================================
+   Star (*) Date Command Menu
+   ======================================== */
+
+.star-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: starMenuIn 0.15s ease;
+}
+
+.star-menu.hidden {
+    display: none;
+}
+
+@keyframes starMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.star-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.star-menu-item:hover,
+.star-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.star-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.star-menu-date {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+/* ========================================
+   Hashtag Command Menu
+   ======================================== */
+
+.hashtag-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: hashtagMenuIn 0.15s ease;
+}
+
+.hashtag-menu.hidden {
+    display: none;
+}
+
+@keyframes hashtagMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hashtag-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.hashtag-menu-item:hover,
+.hashtag-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.hashtag-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-primary);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.hashtag-menu-create .hashtag-menu-icon {
+    background: var(--accent-secondary);
+}
+
+.hashtag-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Hashtag Links
+   ======================================== */
+
+.hashtag-link {
+    display: inline;
+    background: var(--accent-light);
+    color: var(--accent-hover);
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.hashtag-link:hover {
+    background: var(--accent-primary);
+    color: white;
+}
+
+/* ========================================
+   Tag Occurrences Modal
+   ======================================== */
+
+.tag-occurrences {
+    padding: var(--spacing-sm) 0;
+}
+
+.tag-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tag-badge {
+    display: inline-block;
+    background: var(--accent-primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.tag-count {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.tag-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.tag-occurrence-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tag-occurrence-item {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.tag-occurrence-item:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-primary);
+}
+
+.tag-occurrence-section {
+    font-size: var(--font-size-sm);
+    color: var(--accent-hover);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tag-occurrence-context {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Block highlight flash when jumping to occurrence */
+.highlight-flash {
+    animation: highlightFlash 2s ease-out;
+}
+
+@keyframes highlightFlash {
+    0%, 20% {
+        background-color: var(--accent-light);
+        box-shadow: 0 0 0 4px var(--accent-primary);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+    }
+}
+
+/* ========================================
+   Mention (@) Menu
+   ======================================== */
+
+.mention-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 280px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px;
+    animation: mentionMenuIn 0.15s ease;
+}
+
+.mention-menu.hidden {
+    display: none;
+}
+
+@keyframes mentionMenuIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mention-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.mention-menu-item:hover,
+.mention-menu-item.selected {
+    background: var(--accent-light);
+}
+
+.mention-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #6366f1;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.mention-menu-create .mention-menu-icon {
+    background: var(--accent-secondary);
+}
+
+.mention-menu-name {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* ========================================
+   Mention Links
+   ======================================== */
+
+.mention-link {
+    display: inline;
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.mention-link:hover {
+    background: #6366f1;
+    color: white;
+}
+
+/* Dark theme mention colors */
+[data-theme="dark"] .mention-link {
+    background: #312e81;
+    color: #a5b4fc;
+}
+
+[data-theme="dark"] .mention-link:hover {
+    background: #6366f1;
+    color: white;
+}
+
+[data-theme="dark"] .mention-menu-icon {
+    background: #4f46e5;
+}
+
+/* ========================================
+   Mention Occurrences Modal
+   ======================================== */
+
+.mention-occurrences {
+    padding: var(--spacing-sm) 0;
+}
+
+.mention-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.mention-badge {
+    display: inline-block;
+    background: #6366f1;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mention-count {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.mention-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.mention-occurrence-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.mention-occurrence-item {
+    padding: var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.mention-occurrence-item:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+}
+
+[data-theme="dark"] .mention-occurrence-item:hover {
+    background: #312e81;
+    border-color: #6366f1;
+}
+
+.mention-occurrence-section {
+    font-size: var(--font-size-sm);
+    color: #4338ca;
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+[data-theme="dark"] .mention-occurrence-section {
+    color: #a5b4fc;
+}
+
+.mention-occurrence-context {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ========================================
+   People Manager Modal
+   ======================================== */
+
+.people-manager {
+    padding: var(--spacing-sm) 0;
+}
+
+.people-manager-header {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.people-manager-header input {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.people-manager-header input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.people-manager-header button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.people-manager-header button:hover {
+    background: #4f46e5;
+}
+
+.people-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.people-list-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--spacing-lg);
+}
+
+.person-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.person-item:hover {
+    border-color: var(--border-color);
+}
+
+.person-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+}
+
+.person-name .person-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #6366f1;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.person-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.person-actions button {
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    transition: all 0.15s ease;
+}
+
+.person-actions button:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.person-actions button.delete-btn:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+[data-theme="dark"] .person-actions button.delete-btn:hover {
+    background: #450a0a;
+    border-color: #ef4444;
+    color: #f87171;
+}
+
+/* ========================================
+   Code Block Styles
+   ======================================== */
+
+.code-block-wrapper {
+    margin: var(--spacing-md) 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: #1e1e1e;
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #404040;
+}
+
+.code-block-language {
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+}
+
+.code-block-language:hover {
+    border-color: #606060;
+}
+
+.code-block-language:focus {
+    border-color: var(--accent-primary);
+}
+
+.code-block-copy {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    background: transparent;
+    color: #808080;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.code-block-copy:hover {
+    background: #404040;
+    color: #d4d4d4;
+    border-color: #606060;
+}
+
+.code-block-copy.copied {
+    background: #22c55e20;
+    color: #22c55e;
+    border-color: #22c55e;
+}
+
+.code-block-copy svg {
+    flex-shrink: 0;
+}
+
+.code-block-container {
+    position: relative;
+    overflow: auto;
+    max-height: 600px;
+}
+
+.code-block-container pre {
+    margin: 0;
+    padding: 16px !important;
+    background: #1e1e1e !important;
+    border-radius: 0;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    tab-size: 2;
+}
+
+.code-block-container pre[class*="language-"] {
+    background: #1e1e1e !important;
+}
+
+.code-block-container code {
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    display: block;
+    min-height: 24px;
+    outline: none;
+}
+
+.code-block-container code:empty::before,
+.code-block-container code[data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: #606060;
+    pointer-events: none;
+}
+
+/* Line numbers styling */
+.code-block-container.line-numbers pre {
+    padding-left: 3.8em !important;
+}
+
+.code-block-container .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 16px;
+    left: 0;
+    width: 3em;
+    letter-spacing: -1px;
+    border-right: 1px solid #404040;
+    user-select: none;
+    padding-right: 8px;
+    text-align: right;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.code-block-container .line-numbers-rows > span {
+    display: block;
+    counter-increment: linenumber;
+    height: calc(14px * 1.6);
+}
+
+.code-block-container .line-numbers-rows > span::before {
+    content: counter(linenumber);
+    color: #505050;
+    font-size: 12px;
+    line-height: calc(14px * 1.6);
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .code-block-wrapper {
+    background: #f8f8f8;
+    border-color: var(--border-color);
+}
+
+[data-theme="light"] .code-block-header {
+    background: #e8e8e8;
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="light"] .code-block-language {
+    background: #f8f8f8;
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="light"] .code-block-copy {
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+[data-theme="light"] .code-block-copy:hover {
+    background: #e0e0e0;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .code-block-container pre,
+[data-theme="light"] .code-block-container pre[class*="language-"] {
+    background: #f8f8f8 !important;
+}
+
+[data-theme="light"] .code-block-container .line-numbers-rows {
+    border-right-color: var(--border-color);
+}
+
+[data-theme="light"] .code-block-container .line-numbers-rows > span::before {
+    color: #999;
+}
+
+/* Override Prism theme for light mode */
+[data-theme="light"] .token.comment,
+[data-theme="light"] .token.prolog,
+[data-theme="light"] .token.doctype,
+[data-theme="light"] .token.cdata {
+    color: #6a737d;
+}
+
+[data-theme="light"] .token.punctuation {
+    color: #24292e;
+}
+
+[data-theme="light"] .token.property,
+[data-theme="light"] .token.tag,
+[data-theme="light"] .token.boolean,
+[data-theme="light"] .token.number,
+[data-theme="light"] .token.constant,
+[data-theme="light"] .token.symbol,
+[data-theme="light"] .token.deleted {
+    color: #005cc5;
+}
+
+[data-theme="light"] .token.selector,
+[data-theme="light"] .token.attr-name,
+[data-theme="light"] .token.string,
+[data-theme="light"] .token.char,
+[data-theme="light"] .token.builtin,
+[data-theme="light"] .token.inserted {
+    color: #22863a;
+}
+
+[data-theme="light"] .token.operator,
+[data-theme="light"] .token.entity,
+[data-theme="light"] .token.url,
+[data-theme="light"] .language-css .token.string,
+[data-theme="light"] .style .token.string {
+    color: #d73a49;
+}
+
+[data-theme="light"] .token.atrule,
+[data-theme="light"] .token.attr-value,
+[data-theme="light"] .token.keyword {
+    color: #d73a49;
+}
+
+[data-theme="light"] .token.function,
+[data-theme="light"] .token.class-name {
+    color: #6f42c1;
+}
+
+[data-theme="light"] .token.regex,
+[data-theme="light"] .token.important,
+[data-theme="light"] .token.variable {
+    color: #e36209;
 }
 
 /* ========================================
@@ -729,6 +1772,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -795,13 +1839,16 @@ h6.ce-header {
 }
 
 @keyframes shake {
+
     0%,
     100% {
         transform: translateX(0);
     }
+
     25% {
         transform: translateX(-5px);
     }
+
     75% {
         transform: translateX(5px);
     }
@@ -1103,11 +2150,13 @@ h6.ce-header {
 
 /* Old vault-controls - keeping for backwards compatibility */
 .vault-controls {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 .vault-btn {
-    display: none; /* Moved to sidebar footer */
+    display: none;
+    /* Moved to sidebar footer */
 }
 
 /* ========================================
@@ -1160,11 +2209,9 @@ h6.ce-header {
     position: absolute;
     inset: -2px;
     border-radius: 30px;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0) 0%,
-        rgba(125, 211, 192, 0) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0) 0%,
+            rgba(125, 211, 192, 0) 100%);
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -1188,31 +2235,29 @@ h6.ce-header {
 
 .ai-search-bar.expanded::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.4) 0%,
-        rgba(168, 230, 207, 0.4) 50%,
-        rgba(136, 216, 192, 0.4) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.4) 0%,
+            rgba(168, 230, 207, 0.4) 50%,
+            rgba(136, 216, 192, 0.4) 100%);
     animation: glowPulse 2s ease-in-out infinite;
 }
 
 .ai-search-bar.has-input::before {
     opacity: 1;
-    background: linear-gradient(
-        135deg,
-        rgba(125, 211, 192, 0.6) 0%,
-        rgba(168, 230, 207, 0.6) 50%,
-        rgba(136, 216, 192, 0.6) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(125, 211, 192, 0.6) 0%,
+            rgba(168, 230, 207, 0.6) 50%,
+            rgba(136, 216, 192, 0.6) 100%);
 }
 
 @keyframes glowPulse {
+
     0%,
     100% {
         opacity: 0.6;
         filter: blur(8px);
     }
+
     50% {
         opacity: 1;
         filter: blur(12px);
@@ -1224,14 +2269,12 @@ h6.ce-header {
     position: absolute;
     inset: -4px;
     border-radius: 32px;
-    background: conic-gradient(
-        from 0deg,
-        rgba(125, 211, 192, 0.8),
-        rgba(168, 230, 207, 0.8),
-        rgba(136, 216, 192, 0.8),
-        rgba(92, 196, 176, 0.8),
-        rgba(125, 211, 192, 0.8)
-    );
+    background: conic-gradient(from 0deg,
+            rgba(125, 211, 192, 0.8),
+            rgba(168, 230, 207, 0.8),
+            rgba(136, 216, 192, 0.8),
+            rgba(92, 196, 176, 0.8),
+            rgba(125, 211, 192, 0.8));
     z-index: -2;
     opacity: 0;
     filter: blur(16px);
@@ -1249,6 +2292,7 @@ h6.ce-header {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -1364,6 +2408,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateX(-50%) translateY(12px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -1457,6 +2502,7 @@ h6.ce-header {
         opacity: 0;
         transform: translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1603,11 +2649,9 @@ h6.ce-header {
 .ai-orb {
     width: 10px;
     height: 10px;
-    background: linear-gradient(
-        135deg,
-        var(--accent-primary),
-        var(--accent-hover)
-    );
+    background: linear-gradient(135deg,
+            var(--accent-primary),
+            var(--accent-hover));
     border-radius: 50%;
     animation: orbBounce 1.4s ease-in-out infinite;
 }
@@ -1615,20 +2659,24 @@ h6.ce-header {
 .ai-orb:nth-child(1) {
     animation-delay: -0.32s;
 }
+
 .ai-orb:nth-child(2) {
     animation-delay: -0.16s;
 }
+
 .ai-orb:nth-child(3) {
     animation-delay: 0s;
 }
 
 @keyframes orbBounce {
+
     0%,
     80%,
     100% {
         transform: scale(0.6);
         opacity: 0.5;
     }
+
     40% {
         transform: scale(1);
         opacity: 1;
@@ -1835,7 +2883,16 @@ h6.ce-header {
 }
 
 </style>
-    
+    <script>
+        // Apply saved theme immediately to prevent flash of wrong theme on password overlay
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+
 <script>
 // HTA mode detection
 if (window.external && window.external.msWrapperVersion) {
@@ -1848,47 +2905,78 @@ try {
 } catch(e) {}
 </script>
 </head>
-    <body>
-        <div class="app-container">
-            <!-- Sidebar -->
-            <aside class="sidebar" id="sidebar">
-                <div class="sidebar-header">
+
+<body>
+    <!-- Fallback mode banner (shown in Firefox/Safari) -->
+    <div class="fallback-banner hidden" id="fallback-banner">
+        <span class="fallback-message">
+            📁 Your browser doesn't support auto-save to file.
+            <button class="btn-link" id="fallback-save-btn">Save to file</button>
+            to keep your changes.
+        </span>
+        <button class="fallback-dismiss" id="fallback-dismiss" aria-label="Dismiss">×</button>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-actions-row">
+                    <button class="daily-note-btn" id="daily-note-btn" title="Create daily note">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </button>
+                    <button class="people-btn" id="people-btn" title="Manage people">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </button>
                     <div class="search-container">
-                        <input
-                            type="text"
-                            id="search-input"
-                            placeholder="Search headings..."
-                            autocomplete="off"
-                        />
-                        <ul
-                            class="search-results hidden"
-                            id="search-results"
-                        ></ul>
+                        <input type="text" id="search-input" placeholder="Search headings..." autocomplete="off" />
+                        <ul class="search-results hidden" id="search-results"></ul>
                     </div>
                 </div>
-                <nav class="sidebar-nav" id="sidebar-nav">
-                    <ul class="tree" id="heading-tree"></ul>
-                </nav>
-                <div class="resize-handle" id="resize-handle"></div>
-            </aside>
+            </div>
+            <nav class="sidebar-nav" id="sidebar-nav">
+                <ul class="tree" id="heading-tree"></ul>
+            </nav>
+            <div class="resize-handle" id="resize-handle"></div>
+        </aside>
 
-            <!-- Main Editor Area -->
-            <main class="main-editor" id="main-editor">
-                <div class="editor-container">
-                    <div id="editorjs"></div>
-                </div>
-            </main>
-        </div>
+        <!-- Main Editor Area -->
+        <main class="main-editor" id="main-editor">
+            <div class="editor-container">
+                <div id="editorjs"></div>
+            </div>
+        </main>
+    </div>
 
-        <!-- Editor.js CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+    <!-- Prism.js for Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css" />
 
-        <!-- App Scripts -->
-        <script>
+    <!-- Editor.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/header.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0/dist/list.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph@2.11.3/dist/paragraph.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/image.umd.min.js"></script>
+
+    <!-- App Scripts -->
+    <script>
 /**
  * Utility Functions
  */
@@ -2067,7 +3155,7 @@ const Utils = {
 Object.freeze(Utils);
 
 </script>
-        <script>
+    <script>
 /**
  * Crypto - Encryption/Decryption using Web Crypto API
  * Uses AES-GCM with PBKDF2 key derivation for secure password-based encryption
@@ -2252,7 +3340,7 @@ Object.freeze(Crypto);
 window.Crypto = Crypto;
 
 </script>
-        <script>
+    <script>
 /**
  * Vault - Manages the encrypted single-file storage system
  * Handles file access, encryption/decryption, and sync capabilities
@@ -2298,12 +3386,89 @@ const Vault = {
             console.warn(
                 "Vault: File System Access API not supported. Using fallback mode.",
             );
+            this.initFallbackUI();
         }
 
         // Initialize handle storage
         await this.initHandleStorage();
 
         return this;
+    },
+
+    /**
+     * Initialize the fallback mode UI for browsers without File System Access API
+     */
+    initFallbackUI() {
+        const banner = document.getElementById('fallback-banner');
+        const saveBtn = document.getElementById('fallback-save-btn');
+        const dismissBtn = document.getElementById('fallback-dismiss');
+
+        if (!banner) {
+            console.warn("Vault: Fallback banner element not found");
+            return;
+        }
+
+        // Add fallback mode class to body
+        document.body.classList.add('fallback-mode');
+
+        // Setup save button
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await this.exportVault();
+            });
+        }
+
+        // Setup dismiss button
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                banner.classList.add('hidden');
+                // Store dismissal in session (will show again on next vault open)
+                sessionStorage.setItem('fallback-banner-dismissed', 'true');
+            });
+        }
+
+        // Add beforeunload warning for unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (this.isDirty && !this.isLocked) {
+                e.preventDefault();
+                // Modern browsers ignore custom messages, but we still need to set returnValue
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+    },
+
+    /**
+     * Show the fallback banner (called when vault is opened in fallback mode)
+     */
+    showFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+
+        const banner = document.getElementById('fallback-banner');
+        const wasDismissed = sessionStorage.getItem('fallback-banner-dismissed');
+
+        if (banner && !wasDismissed) {
+            banner.classList.remove('hidden');
+        }
+    },
+
+    /**
+     * Update fallback banner to show unsaved changes
+     */
+    updateFallbackBanner() {
+        if (this.hasFileSystemAccess) return;
+
+        const banner = document.getElementById('fallback-banner');
+        if (!banner) return;
+
+        if (this.isDirty) {
+            banner.classList.add('has-unsaved');
+            // Show banner again if it was dismissed but there are unsaved changes
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.remove('has-unsaved');
+        }
     },
 
     /**
@@ -2599,6 +3764,9 @@ const Vault = {
 
         this.rememberVault("knowledge-base.aladin");
 
+        // Show fallback banner to inform user about manual save
+        this.showFallbackBanner();
+
         return { success: true, name: "knowledge-base.aladin", fallback: true };
     },
 
@@ -2676,6 +3844,9 @@ const Vault = {
 
                     this.rememberVault(file.name);
 
+                    // Show fallback banner to inform user about manual save
+                    this.showFallbackBanner();
+
                     resolve({
                         success: true,
                         data: data,
@@ -2715,6 +3886,8 @@ const Vault = {
             // Fallback: save to IndexedDB
             await this.saveToIndexedDB(vaultData);
             this.isDirty = true;
+            // Update banner to show unsaved state
+            this.updateFallbackBanner();
         }
 
         this.lastSaveTime = new Date();
@@ -2749,16 +3922,16 @@ const Vault = {
                 });
                 await writable.write(blob);
                 await writable.close();
-                
+
                 // Success - exit the retry loop
                 this.isDirty = false;
                 return;
             } catch (error) {
                 lastError = error;
-                
+
                 // Check if it's a file locking error (common with cloud sync)
-                const isLockError = 
-                    error.name === "NoModificationAllowedError" || 
+                const isLockError =
+                    error.name === "NoModificationAllowedError" ||
                     error.name === "InvalidStateError" ||
                     error.message?.includes("locked") ||
                     error.message?.includes("in use") ||
@@ -2780,8 +3953,12 @@ const Vault = {
         }
 
         // All retries exhausted
-        console.error("Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.");
-        console.error("Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'");
+        console.error(
+            "Vault: Failed to save after all retries. File may be locked by OneDrive/cloud sync.",
+        );
+        console.error(
+            "Vault: Try: 1) Wait for sync to complete, 2) Right-click file → 'Always keep on this device'",
+        );
         throw lastError;
     },
 
@@ -2892,6 +4069,10 @@ const Vault = {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
+            // Clear dirty flag since user has saved to file
+            this.isDirty = false;
+            this.updateFallbackBanner();
+
             return {
                 success: true,
                 name: "knowledge-base-export.aladin",
@@ -2931,11 +4112,13 @@ const Vault = {
     lock(releaseHandle = false) {
         this.password = null;
         this.isLocked = true;
-        
+
         if (releaseHandle) {
             // Release file handle to allow cloud sync
             this.fileHandle = null;
-            console.log("Vault: Locked and released file handle for cloud sync");
+            console.log(
+                "Vault: Locked and released file handle for cloud sync",
+            );
         } else {
             console.log("Vault: Locked");
         }
@@ -3034,7 +4217,7 @@ const Vault = {
 window.Vault = Vault;
 
 </script>
-        <script>
+    <script>
 /**
  * Modal - Reusable modal dialog system for vault operations
  */
@@ -3711,7 +4894,7 @@ const Modal = {
 window.Modal = Modal;
 
 </script>
-        <script>
+    <script>
 /**
  * Storage Abstraction Layer
  * Now integrated with Vault for encrypted single-file storage
@@ -3834,21 +5017,30 @@ const Storage = {
         } catch (error) {
             console.error("Storage: Failed to save to vault:", error);
             this.lastSaveSuccess = false;
-            
+
             // Show user-friendly error for cloud sync issues
-            if (error.message?.includes("locked") || 
+            if (
+                error.message?.includes("locked") ||
                 error.name === "NoModificationAllowedError" ||
-                error.message?.includes("retries")) {
-                console.warn("Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.");
-                console.warn("Storage: Tip: Right-click your .aladin file → 'Always keep on this device'");
-                
+                error.message?.includes("retries")
+            ) {
+                console.warn(
+                    "Storage: Cloud sync (OneDrive/Dropbox/iCloud) may be blocking the file.",
+                );
+                console.warn(
+                    "Storage: Tip: Right-click your .aladin file → 'Always keep on this device'",
+                );
+
                 // Dispatch event so UI can show notification if needed
-                window.dispatchEvent(new CustomEvent('vault-save-error', { 
-                    detail: { 
-                        type: 'cloud-sync-lock',
-                        message: 'File may be locked by cloud sync. Changes saved to local cache.'
-                    }
-                }));
+                window.dispatchEvent(
+                    new CustomEvent("vault-save-error", {
+                        detail: {
+                            type: "cloud-sync-lock",
+                            message:
+                                "File may be locked by cloud sync. Changes saved to local cache.",
+                        },
+                    }),
+                );
             }
         }
     },
@@ -4157,7 +5349,7 @@ const Storage = {
 window.Storage = Storage;
 
 </script>
-        <script>
+    <script>
 /**
  * File Handler - Manages file uploads, hashing, and storage
  */
@@ -4389,7 +5581,7 @@ const FileHandler = {
 window.FileHandler = FileHandler;
 
 </script>
-        <script>
+    <script>
 /**
  * Sidebar - Navigation tree and search functionality
  */
@@ -4400,6 +5592,9 @@ const Sidebar = {
     headingTree: null,
     resizeHandle: null,
     sidebar: null,
+    themeToggle: null,
+    dailyNoteBtn: null,
+    peopleBtn: null,
 
     // Heading index for search
     headingIndex: [],
@@ -4416,11 +5611,187 @@ const Sidebar = {
         this.headingTree = document.getElementById("heading-tree");
         this.resizeHandle = document.getElementById("resize-handle");
         this.sidebar = document.getElementById("sidebar");
+        this.themeToggle = document.getElementById("theme-toggle");
+        this.dailyNoteBtn = document.getElementById("daily-note-btn");
+        this.peopleBtn = document.getElementById("people-btn");
 
         this.setupSearch();
         this.setupResize();
         this.loadSidebarWidth();
         this.setupHashNavigation();
+        this.setupTheme();
+        this.setupDailyNote();
+        this.setupPeopleManager();
+    },
+
+    /**
+     * Setup people manager functionality
+     */
+    setupPeopleManager() {
+        if (!this.peopleBtn) return;
+
+        this.peopleBtn.addEventListener("click", () => {
+            this.showPeopleManager();
+        });
+    },
+
+    /**
+     * Show people manager modal
+     */
+    async showPeopleManager() {
+        const people = Editor.allPeople || [];
+
+        let modalBody = `
+            <div class="people-manager">
+                <div class="people-manager-header">
+                    <input type="text" id="new-person-input" placeholder="Enter person name..." />
+                    <button id="add-person-btn">Add</button>
+                </div>
+                <div class="people-list" id="people-list">
+                    ${people.length === 0 ? '<p class="people-list-empty">No people added yet. Add someone using the input above or type @ in the editor.</p>' : ''}
+                    ${people.map(person => `
+                        <div class="person-item" data-person="${Utils.escapeHtml(person)}">
+                            <span class="person-name">
+                                <span class="person-icon">@</span>
+                                ${Utils.escapeHtml(person)}
+                            </span>
+                            <span class="person-actions">
+                                <button class="delete-btn" data-person="${Utils.escapeHtml(person)}">Delete</button>
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        Modal.show({
+            title: "Manage People",
+            allowClose: true,
+            body: modalBody,
+            footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+        });
+
+        // Setup event handlers after modal is shown
+        setTimeout(() => {
+            const input = document.getElementById('new-person-input');
+            const addBtn = document.getElementById('add-person-btn');
+            const peopleList = document.getElementById('people-list');
+
+            if (addBtn && input) {
+                addBtn.addEventListener('click', async () => {
+                    const name = input.value.trim();
+                    if (name && !Editor.allPeople.some(p => p.toLowerCase() === name.toLowerCase())) {
+                        Editor.allPeople.push(name);
+                        Editor.allPeople.sort();
+                        await Editor.savePeopleToStorage();
+                        Modal.hide();
+                        this.showPeopleManager();
+                    }
+                });
+
+                input.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        const name = input.value.trim();
+                        if (name && !Editor.allPeople.some(p => p.toLowerCase() === name.toLowerCase())) {
+                            Editor.allPeople.push(name);
+                            Editor.allPeople.sort();
+                            await Editor.savePeopleToStorage();
+                            Modal.hide();
+                            this.showPeopleManager();
+                        }
+                    }
+                });
+
+                input.focus();
+            }
+
+            // Setup delete handlers
+            if (peopleList) {
+                peopleList.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const personToDelete = btn.dataset.person;
+                        Editor.allPeople = Editor.allPeople.filter(p => p !== personToDelete);
+                        await Editor.savePeopleToStorage();
+                        Modal.hide();
+                        this.showPeopleManager();
+                    });
+                });
+            }
+        }, 100);
+    },
+
+    /**
+     * Setup daily note functionality
+     */
+    setupDailyNote() {
+        if (!this.dailyNoteBtn) return;
+
+        this.dailyNoteBtn.addEventListener("click", async () => {
+            await this.createDailyNote();
+        });
+    },
+
+    /**
+     * Create a new daily note section with current date
+     */
+    async createDailyNote() {
+        const now = new Date();
+
+        // Format date as YYYY-MM-DD [Day]
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        // Get day name
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = dayNames[now.getDay()];
+
+        // Combine for the heading
+        const headingText = `${dateStr} (${dayName})`;
+
+        // Create header block with the date
+        const headerBlock = {
+            id: Utils.generateId(),
+            type: "header",
+            data: {
+                text: headingText,
+                level: 1,
+            },
+        };
+
+        // Create empty paragraph block for note content
+        const paragraphBlock = {
+            id: Utils.generateId(),
+            type: "paragraph",
+            data: {
+                text: "",
+            },
+        };
+
+        try {
+            // Get current content
+            const content = await Editor.instance.save();
+
+            // Insert at the beginning of the document
+            content.blocks.unshift(headerBlock, paragraphBlock);
+
+            // Re-render the editor with new content
+            await Editor.instance.render(content);
+
+            // Focus the new paragraph block
+            setTimeout(() => {
+                Editor.instance.caret.setToBlock(1, "start");
+            }, 100);
+
+            // Update sidebar
+            Sidebar.update(content.blocks);
+
+            console.log("Sidebar: Daily note created for", dateStr);
+        } catch (error) {
+            console.error("Sidebar: Failed to create daily note:", error);
+        }
     },
 
     /**
@@ -4786,6 +6157,62 @@ const Sidebar = {
     },
 
     /**
+     * Setup theme management
+     */
+    setupTheme() {
+        // Check saved theme and apply it (even if toggle button doesn't exist yet)
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+
+        // Only setup toggle if element exists
+        if (!this.themeToggle) return;
+
+        this.updateThemeIcon(savedTheme || 'light');
+
+        // Attach toggle event
+        this.themeToggle.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+    },
+
+    /**
+     * Toggle theme
+     */
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateThemeIcon(newTheme);
+
+        // Dispatch custom event
+        window.dispatchEvent(new CustomEvent('themeChange', { detail: { theme: newTheme } }));
+    },
+
+    /**
+     * Update theme toggle icon
+     */
+    updateThemeIcon(theme) {
+        if (!this.themeToggle) return;
+
+        const svg = this.themeToggle.querySelector('svg');
+        if (!svg) return;
+
+        if (theme === 'dark') {
+            // Sun icon (show sun in dark mode to indicate clicking will switch to light)
+            svg.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+        } else {
+            // Moon icon (show moon in light mode to indicate clicking will switch to dark)
+            svg.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+        }
+    },
+
+    /**
      * Update tree when content changes
      */
     update(blocks) {
@@ -4797,7 +6224,577 @@ const Sidebar = {
 window.Sidebar = Sidebar;
 
 </script>
-        <script>
+    <script>
+/**
+ * CodeBlock Tool for Editor.js
+ * Features: Syntax highlighting with Prism.js, line numbers, copy button, language selector
+ */
+
+class CodeBlockTool {
+    /**
+     * Get Tool's toolbox configuration
+     */
+    static get toolbox() {
+        return {
+            title: 'Code',
+            icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>'
+        };
+    }
+
+    /**
+     * Language alias mapping - maps common aliases to Prism language names
+     */
+    static get languageAliases() {
+        return {
+            // JavaScript
+            'js': 'javascript',
+            'node': 'javascript',
+            'nodejs': 'javascript',
+            // TypeScript
+            'ts': 'typescript',
+            // Python
+            'py': 'python',
+            'python3': 'python',
+            'py3': 'python',
+            // C/C++
+            'c++': 'cpp',
+            'cplusplus': 'cpp',
+            'h': 'c',
+            'hpp': 'cpp',
+            // C#
+            'cs': 'csharp',
+            'c#': 'csharp',
+            'dotnet': 'csharp',
+            // Shell/Bash
+            'sh': 'bash',
+            'shell': 'bash',
+            'zsh': 'bash',
+            // PowerShell
+            'ps': 'powershell',
+            'ps1': 'powershell',
+            'pwsh': 'powershell',
+            // Web
+            'htm': 'html',
+            'vue': 'html',
+            'jsx': 'javascript',
+            'tsx': 'typescript',
+            'less': 'css',
+            'sass': 'scss',
+            // Data formats
+            'yml': 'yaml',
+            // Go
+            'golang': 'go',
+            // Ruby
+            'rb': 'ruby',
+            // Rust
+            'rs': 'rust',
+            // Kotlin
+            'kt': 'kotlin',
+            'kts': 'kotlin',
+            // Swift
+            'swift': 'swift',
+            // Docker
+            'dockerfile': 'docker',
+            // Plain text
+            'text': 'plaintext',
+            'txt': 'plaintext',
+            'plain': 'plaintext',
+            'none': 'plaintext',
+            '': 'plaintext'
+        };
+    }
+
+    /**
+     * Resolve a language alias to the canonical Prism language name
+     * @param {string} alias - The language alias (e.g., 'py', 'js', 'ts')
+     * @returns {string} - The canonical language name (e.g., 'python', 'javascript')
+     */
+    static resolveLanguage(alias) {
+        if (!alias) return 'javascript'; // Default
+        
+        const normalized = alias.toLowerCase().trim();
+        
+        // Check if it's an alias
+        if (CodeBlockTool.languageAliases[normalized]) {
+            return CodeBlockTool.languageAliases[normalized];
+        }
+        
+        // Check if it's already a valid language from our list
+        const validLanguages = CodeBlockTool.languages.map(l => l.value);
+        if (validLanguages.includes(normalized)) {
+            return normalized;
+        }
+        
+        // Return as-is (Prism might support it directly)
+        return normalized;
+    }
+
+    /**
+     * Available languages for the dropdown
+     */
+    static get languages() {
+        return [
+            { value: 'javascript', label: 'JavaScript' },
+            { value: 'typescript', label: 'TypeScript' },
+            { value: 'python', label: 'Python' },
+            { value: 'java', label: 'Java' },
+            { value: 'csharp', label: 'C#' },
+            { value: 'cpp', label: 'C++' },
+            { value: 'c', label: 'C' },
+            { value: 'go', label: 'Go' },
+            { value: 'rust', label: 'Rust' },
+            { value: 'ruby', label: 'Ruby' },
+            { value: 'php', label: 'PHP' },
+            { value: 'swift', label: 'Swift' },
+            { value: 'kotlin', label: 'Kotlin' },
+            { value: 'html', label: 'HTML' },
+            { value: 'css', label: 'CSS' },
+            { value: 'scss', label: 'SCSS' },
+            { value: 'json', label: 'JSON' },
+            { value: 'yaml', label: 'YAML' },
+            { value: 'xml', label: 'XML' },
+            { value: 'markdown', label: 'Markdown' },
+            { value: 'sql', label: 'SQL' },
+            { value: 'bash', label: 'Bash' },
+            { value: 'powershell', label: 'PowerShell' },
+            { value: 'docker', label: 'Docker' },
+            { value: 'plaintext', label: 'Plain Text' }
+        ];
+    }
+
+    /**
+     * Automatic language detection based on code content
+     */
+    static detectLanguage(code) {
+        const patterns = [
+            { lang: 'javascript', regex: /\b(const|let|var|function|=>|console\.log|require\(|import\s+.*from)\b/ },
+            { lang: 'typescript', regex: /\b(interface|type\s+\w+\s*=|:\s*(string|number|boolean|any)\b)/ },
+            { lang: 'python', regex: /\b(def\s+\w+|import\s+\w+|from\s+\w+\s+import|print\(|if\s+__name__|:\s*$)/m },
+            { lang: 'java', regex: /\b(public\s+class|private\s+|protected\s+|void\s+main|System\.out\.println)\b/ },
+            { lang: 'csharp', regex: /\b(namespace\s+|using\s+System|Console\.WriteLine|public\s+static\s+void)\b/ },
+            { lang: 'html', regex: /<(!DOCTYPE|html|head|body|div|span|script|style)\b/i },
+            { lang: 'css', regex: /\{[\s\S]*?(color|background|margin|padding|display|font-size)\s*:/ },
+            { lang: 'json', regex: /^\s*[\{\[][\s\S]*[\}\]]\s*$/ },
+            { lang: 'sql', regex: /\b(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|FROM|WHERE|JOIN)\b/i },
+            { lang: 'bash', regex: /^(#!\/bin\/(ba)?sh|\$\s+|echo\s+|export\s+|alias\s+)/m },
+            { lang: 'yaml', regex: /^\s*[\w-]+:\s*[\w\s-]*$/m },
+        ];
+
+        for (const { lang, regex } of patterns) {
+            if (regex.test(code)) {
+                return lang;
+            }
+        }
+        return 'plaintext';
+    }
+
+    /**
+     * Constructor
+     */
+    constructor({ data, api, config, readOnly }) {
+        this.api = api;
+        this.readOnly = readOnly;
+        this.config = config || {};
+
+        this.data = {
+            code: data.code || '',
+            language: data.language || 'javascript'
+        };
+
+        this.wrapper = null;
+        this.codeElement = null;
+        this.languageSelect = null;
+    }
+
+    /**
+     * Render the tool
+     */
+    render() {
+        this.wrapper = document.createElement('div');
+        this.wrapper.classList.add('code-block-wrapper');
+
+        // Create header with language selector and copy button
+        const header = document.createElement('div');
+        header.classList.add('code-block-header');
+
+        // Language selector
+        this.languageSelect = document.createElement('select');
+        this.languageSelect.classList.add('code-block-language');
+        this.languageSelect.disabled = this.readOnly;
+
+        CodeBlockTool.languages.forEach(lang => {
+            const option = document.createElement('option');
+            option.value = lang.value;
+            option.textContent = lang.label;
+            if (lang.value === this.data.language) {
+                option.selected = true;
+            }
+            this.languageSelect.appendChild(option);
+        });
+
+        this.languageSelect.addEventListener('change', () => {
+            this.data.language = this.languageSelect.value;
+            this.highlightCode();
+        });
+
+        // Copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.classList.add('code-block-copy');
+        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
+        copyBtn.addEventListener('click', () => this.copyCode(copyBtn));
+
+        header.appendChild(this.languageSelect);
+        header.appendChild(copyBtn);
+
+        // Code container with line numbers
+        const codeContainer = document.createElement('div');
+        codeContainer.classList.add('code-block-container', 'line-numbers');
+
+        // Pre and code elements for Prism
+        const pre = document.createElement('pre');
+        pre.classList.add('line-numbers');
+
+        this.codeElement = document.createElement('code');
+        this.codeElement.classList.add(`language-${this.data.language}`);
+
+        if (this.readOnly) {
+            this.codeElement.textContent = this.data.code;
+        } else {
+            // Make code editable
+            this.codeElement.contentEditable = 'true';
+            this.codeElement.spellcheck = false;
+            this.codeElement.textContent = this.data.code;
+
+            // Debounce timer for syntax highlighting
+            let highlightTimeout = null;
+
+            // Handle input - update line numbers in real-time, debounce highlighting
+            this.codeElement.addEventListener('input', () => {
+                this.data.code = this.codeElement.textContent;
+                this.updateLineNumbers();
+                
+                // Debounced syntax highlighting (500ms after last keystroke)
+                clearTimeout(highlightTimeout);
+                highlightTimeout = setTimeout(() => {
+                    this.highlightCodePreserveCursor();
+                }, 500);
+            });
+
+            // Handle paste - strip formatting
+            this.codeElement.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text/plain');
+                document.execCommand('insertText', false, text);
+                this.data.code = this.codeElement.textContent;
+                this.updateLineNumbers();
+            });
+
+            // Handle key events
+            this.codeElement.addEventListener('keydown', (e) => {
+                // Tab key for indentation
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.execCommand('insertText', false, '  ');
+                }
+                // Enter key - update line numbers immediately
+                if (e.key === 'Enter') {
+                    setTimeout(() => this.updateLineNumbers(), 0);
+                }
+                // Prevent backspace from deleting the block when cursor is at start
+                // but still allow deleting content
+                if (e.key === 'Backspace') {
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        // Only stop propagation if at the very beginning and nothing to delete
+                        if (range.startOffset === 0 && range.collapsed && 
+                            range.startContainer === this.codeElement ||
+                            range.startContainer === this.codeElement.firstChild && range.startOffset === 0) {
+                            e.stopPropagation();
+                        }
+                    }
+                }
+                // Prevent arrow key navigation from leaving the block
+                if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.stopPropagation();
+                }
+            });
+
+            // Handle blur to re-highlight with syntax coloring
+            this.codeElement.addEventListener('blur', () => {
+                clearTimeout(highlightTimeout);
+                this.highlightCode();
+            });
+
+            // Placeholder handling
+            if (!this.data.code) {
+                this.codeElement.setAttribute('data-placeholder', 'Enter code here...');
+            }
+        }
+
+        pre.appendChild(this.codeElement);
+        codeContainer.appendChild(pre);
+
+        this.wrapper.appendChild(header);
+        this.wrapper.appendChild(codeContainer);
+
+        // Initial highlight and line numbers
+        setTimeout(() => {
+            this.highlightCode();
+            this.updateLineNumbers();
+        }, 0);
+
+        return this.wrapper;
+    }
+
+    /**
+     * Update line numbers without re-highlighting (preserves cursor position)
+     */
+    updateLineNumbers() {
+        if (!this.wrapper) return;
+        
+        const pre = this.wrapper.querySelector('pre');
+        if (!pre) return;
+        
+        const code = this.codeElement?.textContent || '';
+        const lines = code.split('\n');
+        // Always show at least 1 line number
+        const lineCount = Math.max(1, lines.length);
+        
+        // Find or create line numbers element
+        let lineNumbersRows = pre.querySelector('.line-numbers-rows');
+        
+        if (!lineNumbersRows) {
+            lineNumbersRows = document.createElement('span');
+            lineNumbersRows.className = 'line-numbers-rows';
+            lineNumbersRows.setAttribute('aria-hidden', 'true');
+            pre.appendChild(lineNumbersRows);
+        }
+        
+        // Update line numbers
+        const currentSpans = lineNumbersRows.children.length;
+        
+        if (currentSpans < lineCount) {
+            // Add more line number spans
+            for (let i = currentSpans; i < lineCount; i++) {
+                const span = document.createElement('span');
+                lineNumbersRows.appendChild(span);
+            }
+        } else if (currentSpans > lineCount) {
+            // Remove extra spans
+            while (lineNumbersRows.children.length > lineCount) {
+                lineNumbersRows.removeChild(lineNumbersRows.lastChild);
+            }
+        }
+    }
+
+    /**
+     * Apply syntax highlighting with Prism
+     */
+    highlightCode() {
+        if (!this.codeElement) return;
+
+        const code = this.codeElement.textContent;
+        this.data.code = code;
+
+        // Auto-detect language if plaintext and there's code
+        if (this.data.language === 'plaintext' && code.trim()) {
+            const detected = CodeBlockTool.detectLanguage(code);
+            if (detected !== 'plaintext') {
+                this.data.language = detected;
+                this.languageSelect.value = detected;
+            }
+        }
+
+        // Update class for Prism
+        this.codeElement.className = `language-${this.data.language}`;
+
+        // Apply Prism highlighting
+        if (typeof Prism !== 'undefined') {
+            Prism.highlightElement(this.codeElement);
+        }
+    }
+
+    /**
+     * Apply syntax highlighting while preserving cursor position
+     */
+    highlightCodePreserveCursor() {
+        if (!this.codeElement) return;
+        
+        // Save cursor position as text offset
+        const selection = window.getSelection();
+        let cursorOffset = 0;
+        
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            // Calculate the text offset from the beginning of the code element
+            const preCaretRange = range.cloneRange();
+            preCaretRange.selectNodeContents(this.codeElement);
+            preCaretRange.setEnd(range.startContainer, range.startOffset);
+            cursorOffset = preCaretRange.toString().length;
+        }
+        
+        // Get current code content
+        const code = this.codeElement.textContent;
+        this.data.code = code;
+        
+        // Update class for Prism
+        this.codeElement.className = `language-${this.data.language}`;
+        
+        // Apply Prism highlighting
+        if (typeof Prism !== 'undefined') {
+            Prism.highlightElement(this.codeElement);
+        }
+        
+        // Restore cursor position
+        this.restoreCursorPosition(cursorOffset);
+    }
+
+    /**
+     * Restore cursor position after highlighting
+     */
+    restoreCursorPosition(targetOffset) {
+        if (!this.codeElement) return;
+        
+        const walker = document.createTreeWalker(
+            this.codeElement,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let currentOffset = 0;
+        let node = null;
+        
+        while ((node = walker.nextNode())) {
+            const nodeLength = node.textContent.length;
+            if (currentOffset + nodeLength >= targetOffset) {
+                // Found the node containing our offset
+                const range = document.createRange();
+                const selection = window.getSelection();
+                
+                range.setStart(node, targetOffset - currentOffset);
+                range.collapse(true);
+                
+                selection.removeAllRanges();
+                selection.addRange(range);
+                return;
+            }
+            currentOffset += nodeLength;
+        }
+        
+        // If we couldn't find the exact position, put cursor at the end
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(this.codeElement);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    /**
+     * Copy code to clipboard
+     */
+    async copyCode(button) {
+        try {
+            await navigator.clipboard.writeText(this.data.code);
+            const originalHtml = button.innerHTML;
+            button.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied!</span>';
+            button.classList.add('copied');
+
+            setTimeout(() => {
+                button.innerHTML = originalHtml;
+                button.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy code:', err);
+        }
+    }
+
+    /**
+     * Save tool data
+     */
+    save() {
+        return {
+            code: this.data.code,
+            language: this.data.language
+        };
+    }
+
+    /**
+     * Validate data
+     */
+    validate(savedData) {
+        // Allow empty code blocks (user might want to add code later)
+        return true;
+    }
+
+    /**
+     * Sanitize pasted data
+     */
+    static get sanitize() {
+        return {
+            code: true,
+            language: false
+        };
+    }
+
+    /**
+     * Allow pressing Enter inside
+     */
+    static get enableLineBreaks() {
+        return true;
+    }
+
+    /**
+     * Paste handling - convert pasted code blocks
+     */
+    static get pasteConfig() {
+        return {
+            tags: ['PRE', 'CODE'],
+            patterns: {
+                // Match fenced code blocks
+                fencedCode: /^```(\w+)?\n([\s\S]*?)```$/gm
+            }
+        };
+    }
+
+    /**
+     * Handle pasted content
+     */
+    onPaste(event) {
+        const { data } = event.detail;
+
+        if (event.type === 'tag') {
+            // Handle pasted HTML code/pre tags
+            this.data.code = data.textContent;
+            const langClass = data.className?.match(/language-(\w+)/);
+            if (langClass) {
+                this.data.language = CodeBlockTool.resolveLanguage(langClass[1]);
+            }
+        } else if (event.type === 'pattern') {
+            // Handle fenced code blocks from markdown
+            const match = data.match;
+            this.data.language = CodeBlockTool.resolveLanguage(match[1] || '');
+            this.data.code = match[2] || '';
+        }
+
+        if (this.codeElement) {
+            this.codeElement.textContent = this.data.code;
+            if (this.languageSelect) {
+                this.languageSelect.value = this.data.language;
+            }
+            this.highlightCode();
+        }
+    }
+}
+
+// Make globally available
+window.CodeBlockTool = CodeBlockTool;
+
+</script>
+    <script>
 /**
  * Editor - Block-based editor using Editor.js
  */
@@ -5111,6 +7108,9 @@ const Editor = {
                         },
                     },
                 },
+                code: {
+                    class: CodeBlockTool,
+                },
             },
 
             onChange: Utils.debounce(async () => {
@@ -5122,8 +7122,15 @@ const Editor = {
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
                 this.setupSlashCommands();
+                this.setupStarCommands();
+                this.setupHashtagCommands();
+                this.setupMentionCommands();
                 this.setupDragDrop();
+                this.setupBlockDragHandles();
                 this.setupImmediateSave();
+                this.loadTagsFromContent(content.blocks);
+                this.loadPeopleFromStorage();
+                this.loadMentionsFromContent(content.blocks);
                 Sidebar.update(content.blocks);
             },
         });
@@ -5186,12 +7193,13 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            const match = text.match(/^(#{1,6})\s/);
 
-            if (match) {
+            // Check for heading markdown shortcut (# followed by space)
+            const headingMatch = text.match(/^(#{1,6})\s/);
+            if (headingMatch) {
                 e.preventDefault();
 
-                const level = match[1].length;
+                const level = headingMatch[1].length;
                 const headingText = text.replace(/^#{1,6}\s/, "");
 
                 // Get current block index
@@ -5215,6 +7223,42 @@ const Editor = {
                         true,
                     );
                 }
+                return;
+            }
+
+            // Check for code block markdown shortcut (``` followed by optional language)
+            const codeMatch = text.match(/^```(\w*)$/);
+            if (codeMatch) {
+                e.preventDefault();
+
+                // Resolve language alias to canonical name
+                const languageAlias = codeMatch[1] || '';
+                const language = typeof CodeBlockTool !== 'undefined' && CodeBlockTool.resolveLanguage
+                    ? CodeBlockTool.resolveLanguage(languageAlias)
+                    : (languageAlias || 'javascript');
+
+                // Get current block index
+                const blocks = this.container.querySelectorAll(".ce-block");
+                let blockIndex = -1;
+                blocks.forEach((b, i) => {
+                    if (b === block) blockIndex = i;
+                });
+
+                if (blockIndex >= 0) {
+                    // Delete current block and insert code block
+                    await this.instance.blocks.delete(blockIndex);
+                    await this.instance.blocks.insert(
+                        "code",
+                        {
+                            code: "",
+                            language: language,
+                        },
+                        {},
+                        blockIndex,
+                        true,
+                    );
+                }
+                return;
             }
         });
     },
@@ -5223,6 +7267,45 @@ const Editor = {
     slashMenu: null,
     slashQuery: "",
     slashSelectedIndex: 0,
+
+    // Star (*) date command menu state to calculate relative dates
+    starMenu: null,
+    starSelectedIndex: 0,
+    starQuery: "",
+    starOptions: [
+        {
+            name: "today",
+            getDate: function () { return Editor.formatDateISO(new Date()); }
+        },
+        {
+            name: "yesterday",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "tomorrow",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next week",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 7); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next month",
+            getDate: function () { const d = new Date(); return Editor.formatDateISO(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
+        },
+    ],
+
+    // Hashtag command menu state
+    hashtagMenu: null,
+    hashtagSelectedIndex: 0,
+    hashtagQuery: "",
+    allTags: [], // Will be populated from storage
+
+    // Mention (@) command menu state
+    mentionMenu: null,
+    mentionSelectedIndex: 0,
+    mentionQuery: "",
+    allPeople: [], // Will be populated from storage
 
     // Available slash commands
     slashCommands: [
@@ -5281,6 +7364,13 @@ const Editor = {
             icon: "🖼",
             type: "image",
             data: {},
+        },
+        {
+            name: "Code Block",
+            shortcut: "/code",
+            icon: "</>",
+            type: "code",
+            data: { code: "", language: "javascript" },
         },
     ],
 
@@ -5519,6 +7609,1545 @@ const Editor = {
         }
     },
 
+
+    // USING @ to input relative date value
+
+    /**
+     * Format date as YYYY-MM-DD string (ISO date format)
+     * @param {Date} date - The date to format
+     * @returns {string} Date in YYYY-MM-DD format
+     */
+    formatDateISO(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
+    /**
+     * Setup star (*) command menu for date insertion
+     */
+    setupStarCommands() {
+        // Create star menu element
+        this.starMenu = document.createElement("div");
+        this.starMenu.className = "star-menu hidden";
+        this.starMenu.id = "star-menu";
+        document.body.appendChild(this.starMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleStarInput(e);
+        });
+
+        // Handle keyboard navigation in star menu - attach to document with capture phase
+        document.addEventListener("keydown", (e) => {
+            if (this.starMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.starSelectedIndex = Math.min(
+                    this.starSelectedIndex + 1,
+                    this.getFilteredStarOptions().length - 1,
+                );
+                this.updateStarMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.starSelectedIndex = Math.max(
+                    this.starSelectedIndex - 1,
+                    0,
+                );
+                this.updateStarMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredStarOptions();
+                if (options.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.executeStarCommand(options[this.starSelectedIndex]);
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideStarMenu();
+            }
+        }, true); // Use capture phase
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".star-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideStarMenu();
+            }
+        });
+    },
+
+    /**
+     * Handle input for star (*) commands
+     */
+    handleStarInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Check if text contains *
+        const starIndex = text.lastIndexOf("*");
+        if (starIndex !== -1) {
+            // Check if * is at the end or followed by text
+            const textAfterStar = text.substring(starIndex + 1);
+            this.starQuery = textAfterStar.toLowerCase();
+            this.starSelectedIndex = 0;
+            this.showStarMenu(paragraph, starIndex);
+        } else {
+            this.hideStarMenu();
+        }
+    },
+
+    /**
+     * Get filtered options based on query
+     */
+    getFilteredStarOptions() {
+        if (!this.starQuery) return this.starOptions;
+        return this.starOptions.filter(
+            (opt) => opt.name.toLowerCase().includes(this.starQuery)
+        );
+    },
+
+    /**
+     * Show star menu
+     */
+    showStarMenu(element, starIndex) {
+        const options = this.getFilteredStarOptions();
+        if (options.length === 0) {
+            this.hideStarMenu();
+            return;
+        }
+
+        // Build menu HTML
+        this.starMenu.innerHTML = options
+            .map(
+                (opt, index) => `
+            <div class="star-menu-item ${index === this.starSelectedIndex ? "selected" : ""}" 
+                 data-index="${index}">
+                <span class="star-menu-name">${opt.name}</span>
+                <span class="star-menu-date">${opt.getDate()}</span>
+            </div>
+        `,
+            )
+            .join("");
+
+        // Add click handlers - use mousedown to fire before blur
+        this.starMenu.querySelectorAll(".star-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // Prevent blur
+                e.stopPropagation();
+                const index = parseInt(item.dataset.index);
+                this.executeStarCommand(options[index]);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.starMenu.style.top = `${rect.bottom + 5}px`;
+        this.starMenu.style.left = `${rect.left}px`;
+        this.starMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide star menu
+     */
+    hideStarMenu() {
+        this.starMenu.classList.add("hidden");
+        this.starQuery = "";
+    },
+
+    /**
+     * Update selection highlight in menu
+     */
+    updateStarMenuSelection() {
+        const items = this.starMenu.querySelectorAll(".star-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.starSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute a star command (insert date)
+     */
+    async executeStarCommand(option) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const starIndex = text.lastIndexOf("*");
+
+        if (starIndex !== -1) {
+            // Get the date in YYYY-MM-DD format
+            const dateValue = option.getDate();
+
+            // Replace * and query with the date directly in the DOM
+            const newText = text.substring(0, starIndex) + dateValue;
+            paragraph.textContent = newText;
+
+            // Move cursor to end of inserted date
+            const textNode = paragraph.firstChild;
+            if (textNode) {
+                const newRange = document.createRange();
+                const cursorPos = Math.min(newText.length, textNode.length);
+                newRange.setStart(textNode, cursorPos);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+        }
+
+        this.hideStarMenu();
+    },
+
+    // ==========================================
+    // Hashtag Commands (#tag)
+    // ==========================================
+
+    /**
+     * Load existing tags from content blocks and style them in DOM
+     */
+    loadTagsFromContent(blocks) {
+        const tags = new Set();
+        const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = tagRegex.exec(plainText)) !== null) {
+                    tags.add(match[1].toLowerCase());
+                }
+            }
+        });
+
+        this.allTags = Array.from(tags).sort();
+        console.log('Loaded tags:', this.allTags);
+
+        // Style hashtags in DOM after editor renders
+        setTimeout(() => this.styleHashtagsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain hashtags in DOM to styled links
+     * This ensures hashtags from previous sessions are styled correctly
+     */
+    styleHashtagsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            // Skip if all hashtags are already properly styled
+            // Check if there are plain text hashtags (not inside hashtag-link elements)
+
+            // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
+            // Skip elements that only have properly styled hashtag-links
+            const hasUnstyledHashtags = this.hasUnstyledHashtags(paragraph);
+
+            if (hasUnstyledHashtags) {
+                this.processHashtagsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled hashtags
+     */
+    hasUnstyledHashtags(element) {
+        // Check for <a> tags containing hashtags but without hashtag-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^#[a-zA-Z0-9_-]+$/.test(text) && !link.classList.contains('hashtag-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a hashtag-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process hashtags in an element - handles both plain text and existing links
+     */
+    processHashtagsInElement(element) {
+        // First, clean up any empty links (from previous bugs)
+        const emptyLinks = element.querySelectorAll('a:empty');
+        emptyLinks.forEach(link => link.remove());
+
+        // Remove links without meaningful text content
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix any <a> tags that contain hashtags but don't have the hashtag-link class
+        // This happens when Editor.js strips our custom class on save/load
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const hashMatch = text.match(/^#([a-zA-Z0-9_-]+)$/);
+            if (hashMatch && !link.classList.contains('hashtag-link')) {
+                // Add the hashtag-link class and data-tag attribute
+                link.classList.add('hashtag-link');
+                link.dataset.tag = hashMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Now process only text nodes that are not inside existing hashtag-links
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag (they are handled above)
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            // Check if this text node contains a hashtag
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse to avoid offset issues
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+            if (tagRegex.test(text)) {
+                // Reset regex
+                tagRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = tagRegex.exec(text)) !== null) {
+                    // Add text before the hashtag
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    // Create the hashtag link
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'hashtag-link';
+                    link.dataset.tag = match[1];
+                    link.textContent = '#' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                // Add remaining text after last hashtag
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
+    },
+
+    /**
+     * Setup hashtag command menu
+     */
+    setupHashtagCommands() {
+        // Create hashtag menu element
+        this.hashtagMenu = document.createElement("div");
+        this.hashtagMenu.className = "hashtag-menu hidden";
+        this.hashtagMenu.id = "hashtag-menu";
+        document.body.appendChild(this.hashtagMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleHashtagInput(e);
+        });
+
+        // Handle keyboard navigation in hashtag menu
+        document.addEventListener("keydown", (e) => {
+            if (this.hashtagMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredHashtags();
+                this.hashtagSelectedIndex = Math.min(
+                    this.hashtagSelectedIndex + 1,
+                    options.length - 1,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hashtagSelectedIndex = Math.max(
+                    this.hashtagSelectedIndex - 1,
+                    0,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredHashtags();
+                const query = this.hashtagQuery;
+                const showCreateOption = query && query.length > 0 && !this.allTags.includes(query);
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    // If selected index is on the "create" option or options is empty
+                    if (this.hashtagSelectedIndex >= options.length && showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeHashtagCommand(options[this.hashtagSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideHashtagMenu();
+            } else if (e.key === " ") {
+                // Space completes current tag input
+                const query = this.hashtagQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeHashtagCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".hashtag-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideHashtagMenu();
+            }
+        });
+
+        // Setup click handler for hashtag links
+        document.addEventListener("click", (e) => {
+            const hashtagLink = e.target.closest(".hashtag-link");
+            if (hashtagLink) {
+                e.preventDefault();
+                const tag = hashtagLink.dataset.tag;
+                if (tag) {
+                    this.showTagOccurrences(tag);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for hashtag commands
+     */
+    handleHashtagInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Find the last # that could be the start of a tag being typed
+        // Look for # followed by optional word characters at the end of text or before cursor
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        // Match # followed by optional tag characters at end
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+
+        if (hashMatch) {
+            this.hashtagQuery = hashMatch[1].toLowerCase();
+            this.hashtagSelectedIndex = 0;
+            this.showHashtagMenu(paragraph);
+        } else {
+            this.hideHashtagMenu();
+        }
+    },
+
+    /**
+     * Get cursor offset within element
+     */
+    getCursorOffsetInElement(element) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return 0;
+
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+
+        return preCaretRange.toString().length;
+    },
+
+    /**
+     * Get filtered hashtags based on query
+     */
+    getFilteredHashtags() {
+        if (!this.hashtagQuery) return this.allTags.slice(0, 10);
+        return this.allTags.filter(
+            (tag) => tag.toLowerCase().includes(this.hashtagQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show hashtag menu
+     */
+    showHashtagMenu(element) {
+        const filteredTags = this.getFilteredHashtags();
+        const query = this.hashtagQuery;
+
+        // If we have a query that's not an existing tag, show option to create it
+        const showCreateOption = query && query.length > 0 && !this.allTags.includes(query.toLowerCase());
+
+        // If no filtered tags and no create option and no query, hide menu
+        if (filteredTags.length === 0 && !showCreateOption) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        // Build menu HTML
+        let menuHtml = '';
+
+        // Add existing tag suggestions
+        filteredTags.forEach((tag, index) => {
+            menuHtml += `
+                <div class="hashtag-menu-item ${index === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-tag="${tag}">
+                    <span class="hashtag-menu-icon">#</span>
+                    <span class="hashtag-menu-name">${tag}</span>
+                </div>
+            `;
+        });
+
+        // Add "create new tag" option if query doesn't match existing
+        if (showCreateOption) {
+            const createIndex = filteredTags.length;
+            menuHtml += `
+                <div class="hashtag-menu-item hashtag-menu-create ${createIndex === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-tag="${query}">
+                    <span class="hashtag-menu-icon">+</span>
+                    <span class="hashtag-menu-name">Create #${query}</span>
+                </div>
+            `;
+        }
+
+        if (!menuHtml) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        this.hashtagMenu.innerHTML = menuHtml;
+
+        // Add click handlers
+        this.hashtagMenu.querySelectorAll(".hashtag-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tag = item.dataset.tag;
+                this.executeHashtagCommand(tag);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.hashtagMenu.style.top = `${rect.bottom + 5}px`;
+        this.hashtagMenu.style.left = `${rect.left}px`;
+        this.hashtagMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide hashtag menu
+     */
+    hideHashtagMenu() {
+        this.hashtagMenu.classList.add("hidden");
+        this.hashtagQuery = "";
+    },
+
+    /**
+     * Update selection highlight in hashtag menu
+     */
+    updateHashtagMenuSelection() {
+        const items = this.hashtagMenu.querySelectorAll(".hashtag-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.hashtagSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute a hashtag command - insert tag as clickable link
+     */
+    async executeHashtagCommand(tagName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        // Get current text and find the # position
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+        if (!hashMatch) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        const hashIndex = textBeforeCursor.lastIndexOf('#');
+        const beforeHash = text.substring(0, hashIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        // Create the hashtag link HTML
+        const tagLink = `<a href="#" class="hashtag-link" data-tag="${tagName}">#${tagName}</a>`;
+
+        // Update paragraph with the link
+        paragraph.innerHTML = beforeHash + tagLink + ' ' + afterCursor;
+
+        // Add tag to allTags if new
+        if (!this.allTags.includes(tagName.toLowerCase())) {
+            this.allTags.push(tagName.toLowerCase());
+            this.allTags.sort();
+        }
+
+        // Move cursor after the inserted tag
+        this.moveCursorToEnd(paragraph);
+
+        this.hideHashtagMenu();
+
+        // Trigger save
+        await this.save();
+    },
+
+    /**
+     * Move cursor to end of element
+     */
+    moveCursorToEnd(element) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    },
+
+    /**
+     * Show modal with all occurrences of a tag
+     */
+    async showTagOccurrences(tagName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const tagRegex = new RegExp(`#${tagName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (tagRegex.test(plainText)) {
+                        // Get context around the tag
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const tagIndex = plainText.toLowerCase().indexOf('#' + tagName.toLowerCase());
+                            const start = Math.max(0, tagIndex - 40);
+                            const end = Math.min(plainText.length, tagIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+
+                        // Find parent heading for context
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    // Reset regex lastIndex
+                    tagRegex.lastIndex = 0;
+                }
+            });
+
+            // Build modal content
+            let modalBody = `
+                <div class="tag-occurrences">
+                    <div class="tag-header">
+                        <span class="tag-badge">#${Utils.escapeHtml(tagName)}</span>
+                        <span class="tag-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="tag-empty">No occurrences found for this tag.</p>`;
+            } else {
+                modalBody += `<div class="tag-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="tag-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="tag-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="tag-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Tag: #${tagName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            // Add click handlers to jump to occurrence
+            setTimeout(() => {
+                document.querySelectorAll('.tag-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing tag occurrences:', error);
+        }
+    },
+
+    /**
+     * Scroll to a specific block by ID
+     */
+    scrollToBlock(blockId) {
+        const blockElement = document.getElementById(blockId);
+        if (blockElement) {
+            blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            blockElement.classList.add('highlight-flash');
+            setTimeout(() => {
+                blockElement.classList.remove('highlight-flash');
+            }, 2000);
+        }
+    },
+
+    // ==========================================
+    // Mention Commands (@person)
+    // ==========================================
+
+    /**
+     * Load people from storage
+     */
+    async loadPeopleFromStorage() {
+        try {
+            const storedPeople = await Storage.getSetting('people', []);
+            this.allPeople = Array.isArray(storedPeople) ? storedPeople.sort() : [];
+            console.log('Loaded people:', this.allPeople);
+        } catch (error) {
+            console.error('Failed to load people:', error);
+            this.allPeople = [];
+        }
+    },
+
+    /**
+     * Save people to storage
+     */
+    async savePeopleToStorage() {
+        try {
+            await Storage.saveSetting('people', this.allPeople);
+        } catch (error) {
+            console.error('Failed to save people:', error);
+        }
+    },
+
+    /**
+     * Load mentions from content blocks and style them in DOM
+     */
+    loadMentionsFromContent(blocks) {
+        const people = new Set(this.allPeople);
+        const mentionRegex = /@([a-zA-Z0-9_-]+(?:\s+[a-zA-Z0-9_-]+)?)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = mentionRegex.exec(plainText)) !== null) {
+                    people.add(match[1]);
+                }
+            }
+        });
+
+        this.allPeople = Array.from(people).sort();
+
+        // Style mentions in DOM after editor renders
+        setTimeout(() => this.styleMentionsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain mentions in DOM to styled links
+     */
+    styleMentionsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            const hasUnstyledMentions = this.hasUnstyledMentions(paragraph);
+            if (hasUnstyledMentions) {
+                this.processMentionsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled mentions
+     */
+    hasUnstyledMentions(element) {
+        // Check for <a> tags containing mentions but without mention-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^@[a-zA-Z0-9_-]+/.test(text) && !link.classList.contains('mention-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a mention-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process mentions in an element - handles both plain text and existing links
+     */
+    processMentionsInElement(element) {
+        // Clean up empty links
+        element.querySelectorAll('a:empty').forEach(link => link.remove());
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix <a> tags containing mentions but missing mention-link class
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const mentionMatch = text.match(/^@([a-zA-Z0-9_-]+)$/);
+            if (mentionMatch && !link.classList.contains('mention-link')) {
+                link.classList.add('mention-link');
+                link.dataset.person = mentionMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Process text nodes
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+
+            if (mentionRegex.test(text)) {
+                mentionRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = mentionRegex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'mention-link';
+                    link.dataset.person = match[1];
+                    link.textContent = '@' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
+    },
+
+    /**
+     * Setup mention (@) command menu
+     */
+    setupMentionCommands() {
+        // Create mention menu element
+        this.mentionMenu = document.createElement("div");
+        this.mentionMenu.className = "mention-menu hidden";
+        this.mentionMenu.id = "mention-menu";
+        document.body.appendChild(this.mentionMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleMentionInput(e);
+        });
+
+        // Handle keyboard navigation in mention menu
+        document.addEventListener("keydown", (e) => {
+            if (this.mentionMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredPeople();
+                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 &&
+                    !this.allPeople.some(p => p.toLowerCase() === this.mentionQuery.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+                this.mentionSelectedIndex = Math.min(this.mentionSelectedIndex + 1, totalOptions - 1);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.mentionSelectedIndex = Math.max(this.mentionSelectedIndex - 1, 0);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredPeople();
+                const query = this.mentionQuery;
+                const showCreateOption = query && query.length > 0 &&
+                    !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    if (this.mentionSelectedIndex >= options.length && showCreateOption) {
+                        this.executeMentionCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeMentionCommand(options[this.mentionSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeMentionCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideMentionMenu();
+            } else if (e.key === " ") {
+                const query = this.mentionQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeMentionCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".mention-menu") && !e.target.closest(".ce-block")) {
+                this.hideMentionMenu();
+            }
+        });
+
+        // Setup click handler for mention links
+        document.addEventListener("click", (e) => {
+            const mentionLink = e.target.closest(".mention-link");
+            if (mentionLink) {
+                e.preventDefault();
+                const person = mentionLink.dataset.person;
+                if (person) {
+                    this.showMentionOccurrences(person);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for mention commands
+     */
+    handleMentionInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        // Match @ followed by optional name characters at end
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+
+        if (mentionMatch) {
+            this.mentionQuery = mentionMatch[1].toLowerCase();
+            this.mentionSelectedIndex = 0;
+            this.showMentionMenu(paragraph);
+        } else {
+            this.hideMentionMenu();
+        }
+    },
+
+    /**
+     * Get filtered people based on query
+     */
+    getFilteredPeople() {
+        if (!this.mentionQuery) return this.allPeople.slice(0, 10);
+        return this.allPeople.filter(
+            (person) => person.toLowerCase().includes(this.mentionQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show mention menu
+     */
+    showMentionMenu(element) {
+        const filteredPeople = this.getFilteredPeople();
+        const query = this.mentionQuery;
+
+        const showCreateOption = query && query.length > 0 &&
+            !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+
+        if (filteredPeople.length === 0 && !showCreateOption) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        let menuHtml = '';
+
+        filteredPeople.forEach((person, index) => {
+            menuHtml += `
+                <div class="mention-menu-item ${index === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-person="${Utils.escapeHtml(person)}">
+                    <span class="mention-menu-icon">@</span>
+                    <span class="mention-menu-name">${Utils.escapeHtml(person)}</span>
+                </div>
+            `;
+        });
+
+        if (showCreateOption) {
+            const createIndex = filteredPeople.length;
+            menuHtml += `
+                <div class="mention-menu-item mention-menu-create ${createIndex === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-person="${Utils.escapeHtml(query)}">
+                    <span class="mention-menu-icon">+</span>
+                    <span class="mention-menu-name">Add @${Utils.escapeHtml(query)}</span>
+                </div>
+            `;
+        }
+
+        if (!menuHtml) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        this.mentionMenu.innerHTML = menuHtml;
+
+        this.mentionMenu.querySelectorAll(".mention-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const person = item.dataset.person;
+                this.executeMentionCommand(person);
+            });
+        });
+
+        const rect = element.getBoundingClientRect();
+        this.mentionMenu.style.top = `${rect.bottom + 5}px`;
+        this.mentionMenu.style.left = `${rect.left}px`;
+        this.mentionMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide mention menu
+     */
+    hideMentionMenu() {
+        this.mentionMenu.classList.add("hidden");
+        this.mentionQuery = "";
+    },
+
+    /**
+     * Update selection highlight in mention menu
+     */
+    updateMentionMenuSelection() {
+        const items = this.mentionMenu.querySelectorAll(".mention-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle("selected", index === this.mentionSelectedIndex);
+        });
+    },
+
+    /**
+     * Execute a mention command - insert person as clickable link
+     */
+    async executeMentionCommand(personName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+        if (!mentionMatch) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+        const beforeAt = text.substring(0, atIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        const mentionLink = `<a href="#" class="mention-link" data-person="${personName}">@${personName}</a>`;
+
+        paragraph.innerHTML = beforeAt + mentionLink + ' ' + afterCursor;
+
+        // Add person to allPeople if new
+        if (!this.allPeople.some(p => p.toLowerCase() === personName.toLowerCase())) {
+            this.allPeople.push(personName);
+            this.allPeople.sort();
+            await this.savePeopleToStorage();
+        }
+
+        this.moveCursorToEnd(paragraph);
+        this.hideMentionMenu();
+        await this.save();
+    },
+
+    /**
+     * Show modal with all occurrences of a person mention
+     */
+    async showMentionOccurrences(personName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const mentionRegex = new RegExp(`@${personName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (mentionRegex.test(plainText)) {
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const mentionIndex = plainText.toLowerCase().indexOf('@' + personName.toLowerCase());
+                            const start = Math.max(0, mentionIndex - 40);
+                            const end = Math.min(plainText.length, mentionIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    mentionRegex.lastIndex = 0;
+                }
+            });
+
+            let modalBody = `
+                <div class="mention-occurrences">
+                    <div class="mention-header">
+                        <span class="mention-badge">@${Utils.escapeHtml(personName)}</span>
+                        <span class="mention-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="mention-empty">No occurrences found for this person.</p>`;
+            } else {
+                modalBody += `<div class="mention-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="mention-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="mention-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="mention-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Person: @${personName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('.mention-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing mention occurrences:', error);
+        }
+    },
+
+    // Block drag state
+    draggedBlock: null,
+    draggedBlockIndex: null,
+    dropIndicator: null,
+
+    /**
+     * Setup drag handles for block reordering
+     * Enhances the existing Editor.js toolbar settings button with drag functionality
+     */
+    setupBlockDragHandles() {
+        // Create drop indicator element
+        this.dropIndicator = document.createElement("div");
+        this.dropIndicator.className = "block-drop-indicator hidden";
+        document.body.appendChild(this.dropIndicator);
+
+        // Observe DOM changes to enhance Editor.js toolbars with drag functionality
+        const observer = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+
+        observer.observe(this.container, {
+            childList: true,
+            subtree: true,
+        });
+
+        // Also observe the document body for the toolbar (Editor.js may append it there)
+        const bodyObserver = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+        bodyObserver.observe(document.body, {
+            childList: true,
+            subtree: false,
+        });
+
+        // Initial setup
+        this.enhanceToolbarWithDrag();
+        this.setupBlockDropZones();
+    },
+
+    /**
+     * Enhance Editor.js toolbar settings button with drag functionality
+     */
+    enhanceToolbarWithDrag() {
+        // Find the Editor.js settings button (the 6-dot button)
+        const settingsBtn = document.querySelector('.ce-toolbar__settings-btn');
+        if (!settingsBtn || settingsBtn.dataset.dragEnhanced) return;
+
+        settingsBtn.dataset.dragEnhanced = 'true';
+        settingsBtn.draggable = true;
+        settingsBtn.title = 'Drag to reorder • Click for settings';
+        settingsBtn.style.cursor = 'grab';
+
+        // Drag start on settings button
+        settingsBtn.addEventListener('dragstart', (e) => {
+            // Find current focused block
+            const focusedBlock = document.querySelector('.ce-block--focused');
+            if (!focusedBlock) {
+                e.preventDefault();
+                return;
+            }
+
+            this.draggedBlock = focusedBlock;
+            this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
+            focusedBlock.classList.add('dragging');
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'block');
+
+            this.container.classList.add('block-dragging');
+
+            // Prevent text selection during drag
+            document.body.style.userSelect = 'none';
+        });
+
+        // Drag end
+        settingsBtn.addEventListener('dragend', (e) => {
+            if (this.draggedBlock) {
+                this.draggedBlock.classList.remove('dragging');
+            }
+            this.container.classList.remove('block-dragging');
+            this.dropIndicator.classList.add('hidden');
+            this.draggedBlock = null;
+            this.draggedBlockIndex = null;
+
+            // Re-enable text selection
+            document.body.style.userSelect = '';
+
+            // Remove all drag-over classes
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                b.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        });
+    },
+
+    /**
+     * Setup drop zones on all blocks
+     */
+    setupBlockDropZones() {
+        // Use event delegation on the container for drop zones
+        this.container.addEventListener('dragover', (e) => {
+            if (!this.draggedBlock) return;
+
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            // Clear all previous indicators
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                if (b !== block) {
+                    b.classList.remove('drag-over-top', 'drag-over-bottom');
+                }
+            });
+
+            // Determine if dropping above or below this block
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+
+            // Clear previous indicators on this block
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            // Add appropriate indicator
+            if (isAbove) {
+                block.classList.add('drag-over-top');
+            } else {
+                block.classList.add('drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('dragleave', (e) => {
+            const block = e.target.closest('.ce-block');
+            if (block && !block.contains(e.relatedTarget)) {
+                block.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('drop', async (e) => {
+            if (!this.draggedBlock) return;
+
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+
+            e.preventDefault();
+
+            const fromIndex = this.draggedBlockIndex;
+            const toBlockIndex = this.getBlockIndex(block);
+
+            // Determine if dropping above or below
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+
+            let toIndex = isAbove ? toBlockIndex : toBlockIndex + 1;
+
+            // Adjust if moving down (since the block will be removed first)
+            if (fromIndex < toIndex) {
+                toIndex--;
+            }
+
+            // Clear indicators
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            // Move the block using Editor.js API
+            if (fromIndex !== toIndex && fromIndex >= 0) {
+                try {
+                    await this.instance.blocks.move(toIndex, fromIndex);
+                    await this.save();
+                    console.log(`Block moved from ${fromIndex} to ${toIndex}`);
+                } catch (error) {
+                    console.error('Failed to move block:', error);
+                }
+            }
+        });
+    },
+
+    /**
+     * Get the index of a block element
+     */
+    getBlockIndex(blockElement) {
+        const blocks = this.container.querySelectorAll('.ce-block');
+        let index = -1;
+        blocks.forEach((b, i) => {
+            if (b === blockElement) index = i;
+        });
+        return index;
+    },
+
     /**
      * Setup drag and drop for files
      */
@@ -5672,7 +9301,7 @@ const Editor = {
         try {
             // First, capture empty blocks from DOM before Editor.js filters them
             const emptyBlockIds = this.captureEmptyBlockIds();
-            
+
             const data = await this.instance.save();
 
             // Ensure all blocks have IDs
@@ -5783,17 +9412,20 @@ const Editor = {
      * Editor.js strips empty blocks, so we mark them with a special invisible character
      */
     preserveSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'paragraph') {
-                const text = block.data?.text || '';
+        return blocks.map((block) => {
+            if (block.type === "paragraph") {
+                const text = block.data?.text || "";
                 // Check if paragraph is empty or only whitespace/br tags
-                const stripped = text.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, '').trim();
-                if (stripped === '' || stripped === '\u200B') {
+                const stripped = text
+                    .replace(/<br\s*\/?>/gi, "")
+                    .replace(/&nbsp;/gi, "")
+                    .trim();
+                if (stripped === "" || stripped === "\u200B") {
                     // Mark as spacer for storage
                     return {
                         ...block,
-                        type: 'spacer',
-                        data: { preserved: true }
+                        type: "spacer",
+                        data: { preserved: true },
                     };
                 }
             }
@@ -5805,13 +9437,13 @@ const Editor = {
      * Restore spacer markers back to empty paragraphs for editing
      */
     restoreSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'spacer' && block.data?.preserved) {
+        return blocks.map((block) => {
+            if (block.type === "spacer" && block.data?.preserved) {
                 // Restore as empty paragraph with zero-width space to prevent Editor.js from removing
                 return {
                     ...block,
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
             }
             return block;
@@ -5823,29 +9455,35 @@ const Editor = {
      */
     captureEmptyBlockIds() {
         const emptyBlocks = [];
-        const blockElements = this.container.querySelectorAll('.ce-block');
-        
+        const blockElements = this.container.querySelectorAll(".ce-block");
+
         blockElements.forEach((blockEl, index) => {
-            const contentEl = blockEl.querySelector('.ce-paragraph, [contenteditable="true"]');
+            const contentEl = blockEl.querySelector(
+                '.ce-paragraph, [contenteditable="true"]',
+            );
             if (contentEl) {
-                const text = contentEl.textContent?.trim() || '';
-                const innerHTML = contentEl.innerHTML?.trim() || '';
-                
+                const text = contentEl.textContent?.trim() || "";
+                const innerHTML = contentEl.innerHTML?.trim() || "";
+
                 // Check if the block is effectively empty
-                const isEmptyText = text === '' || text === '\u200B';
-                const isEmptyHtml = innerHTML === '' || innerHTML === '<br>' || innerHTML === '&nbsp;';
-                
+                const isEmptyText = text === "" || text === "\u200B";
+                const isEmptyHtml =
+                    innerHTML === "" ||
+                    innerHTML === "<br>" ||
+                    innerHTML === "&nbsp;";
+
                 if (isEmptyText || isEmptyHtml) {
-                    const blockId = blockEl.getAttribute('data-id') || blockEl.id;
+                    const blockId =
+                        blockEl.getAttribute("data-id") || blockEl.id;
                     emptyBlocks.push({
                         id: blockId,
                         index: index,
-                        type: 'paragraph'
+                        type: "paragraph",
                     });
                 }
             }
         });
-        
+
         return emptyBlocks;
     },
 
@@ -5858,30 +9496,32 @@ const Editor = {
         }
 
         // Build a set of existing block IDs
-        const existingIds = new Set(blocks.map(b => b.id));
-        
+        const existingIds = new Set(blocks.map((b) => b.id));
+
         // Create a new array with empty blocks reinserted
         const result = [...blocks];
-        
+
         // Sort by index to insert in correct order
-        const sortedEmpty = [...emptyBlockIds].sort((a, b) => a.index - b.index);
-        
+        const sortedEmpty = [...emptyBlockIds].sort(
+            (a, b) => a.index - b.index,
+        );
+
         for (const empty of sortedEmpty) {
             // Only reinsert if this block was stripped (not in existing blocks)
             if (!existingIds.has(empty.id)) {
                 // Create empty paragraph block
                 const emptyBlock = {
                     id: empty.id || Utils.generateId(),
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
-                
+
                 // Insert at the original position (capped to array length)
                 const insertIndex = Math.min(empty.index, result.length);
                 result.splice(insertIndex, 0, emptyBlock);
             }
         }
-        
+
         return result;
     },
 };
@@ -5890,7 +9530,7 @@ const Editor = {
 window.Editor = Editor;
 
 </script>
-        <script>
+    <script>
 /**
  * AI - Retrieval-Augmented Generation system for knowledge base queries
  * Supports OpenAI, Gemini, Ollama, and LM Studio
@@ -7100,7 +10740,7 @@ Never explain your process. Never list sources separately.`,
 window.AI = AI;
 
 </script>
-        <script>
+    <script>
 /**
  * AI Chat - User interface for AI-powered knowledge base queries
  * Floating search bar design inspired by Gemini/Siri
@@ -7244,8 +10884,8 @@ const AIChat = {
                     </button>
                     <button class="ai-action-btn" id="btn-ai-settings-mini" title="AI Settings">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </button>
                     <button class="ai-action-btn ai-send-btn" id="btn-ai-send-mini" title="Send" disabled>
@@ -7656,9 +11296,8 @@ const AIChat = {
             <div class="ai-compact-answer">
                 <div class="ai-answer-text">${this.formatMarkdown(compactAnswer)}</div>
                 ${sourcesHtml}
-                ${
-                    hasMore
-                        ? `
+                ${hasMore
+                ? `
                     <button class="ai-expand-btn" data-full="${btoa(encodeURIComponent(fullAnswer))}" onclick="AIChat.expandAnswer(this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 5v14M5 12h14"></path>
@@ -7666,8 +11305,8 @@ const AIChat = {
                         Show full answer
                     </button>
                 `
-                        : ""
-                }
+                : ""
+            }
             </div>
         `;
 
@@ -7825,14 +11464,14 @@ const AIChat = {
                         <select id="ai-provider">
                             <option value="">Select a provider...</option>
                             ${Object.entries(providers)
-                                .map(
-                                    ([key, p]) => `
+                    .map(
+                        ([key, p]) => `
                                 <option value="${key}" ${currentConfig.provider === key ? "selected" : ""}>
                                     ${p.name}
                                 </option>
                             `,
-                                )
-                                .join("")}
+                    )
+                    .join("")}
                         </select>
                         <small class="provider-hint" id="provider-hint"></small>
                     </div>
@@ -7863,11 +11502,10 @@ const AIChat = {
                     <div class="ai-index-section">
                         <label>Knowledge Base Index</label>
                         <div class="ai-index-status" id="ai-index-status">
-                            ${
-                                stats.isIndexed
-                                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
-                                    : `<span class="status-warning">Not indexed</span>`
-                            }
+                            ${stats.isIndexed
+                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
+                    : `<span class="status-warning">Not indexed</span>`
+                }
                         </div>
                         <button class="btn btn-outline" id="btn-reindex-now" style="margin-top: 8px;">
                             🔄 Re-index Content
@@ -8126,7 +11764,7 @@ const AIChat = {
 window.AIChat = AIChat;
 
 </script>
-        <script>
+    <script>
 /**
  * App - Main application entry point with vault integration
  */
@@ -8134,11 +11772,23 @@ window.AIChat = AIChat;
 const App = {
     isInitialized: false,
 
+    // Demo mode constants for testing
+    DEMO_MODE: false,
+    DEMO_PASSWORD: "demo-test-password-123",
+
     /**
      * Initialize the application
      */
     async init() {
         console.log("Initializing Aladin...");
+
+        // Check for demo mode via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        this.DEMO_MODE = urlParams.get("demo") === "true";
+
+        if (this.DEMO_MODE) {
+            console.log("Demo mode enabled - using demo password");
+        }
 
         try {
             // Initialize modal system first
@@ -8170,6 +11820,12 @@ const App = {
      * Handle application startup - check for vault and show appropriate dialog
      */
     async handleStartup() {
+        // In demo mode, skip vault selection and initialize with demo data
+        if (this.DEMO_MODE) {
+            await this.initializeDemoMode();
+            return;
+        }
+
         const hasRemembered = Vault.hasRememberedVault();
         const vaultInfo = Vault.getRememberedVaultInfo();
         const hasPersistedHandle = await Vault.hasPersistedHandle();
@@ -8182,6 +11838,23 @@ const App = {
             // Show welcome dialog for new users
             await this.showWelcomeDialog();
         }
+    },
+
+    /**
+     * Initialize in demo mode for testing
+     * Bypasses vault creation/password prompt and uses demo credentials
+     */
+    async initializeDemoMode() {
+        console.log("Initializing demo mode...");
+
+        // Set demo password in Vault for storage operations
+        Vault.password = this.DEMO_PASSWORD;
+        Vault.isLocked = false;
+
+        // Initialize with null data (will use default content)
+        await this.initializeWithData(null);
+
+        console.log("Demo mode initialized successfully");
     },
 
     /**
@@ -8247,21 +11920,20 @@ const App = {
             body: `
                 <div class="password-modal">
                     <p class="vault-name">Vault: <strong>${Utils.escapeHtml(vaultName)}</strong></p>
-                    ${
-                        !canAutoOpen && hasFileSystemAccess
-                            ? `
+                    ${!canAutoOpen && hasFileSystemAccess
+                    ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
                         For security, you'll need to select your vault file and enter your password.
                     </p>
                     `
-                            : canAutoOpen
-                              ? `
+                    : canAutoOpen
+                        ? `
                     <p class="modal-hint" style="font-size: 13px; color: var(--accent-hover); margin-bottom: 16px;">
                         ✓ Vault file remembered - just enter your password!
                     </p>
                     `
-                              : ""
-                    }
+                        : ""
+                }
                     <div class="form-group">
                         <label for="vault-password">Password</label>
                         <div class="password-input-wrapper">
@@ -8277,7 +11949,7 @@ const App = {
             footer: `
                 <button class="btn btn-primary" id="btn-unlock">${canAutoOpen ? "Unlock" : "Select & Unlock"}</button>
             `,
-            onClose: () => {},
+            onClose: () => { },
         });
 
         // Return a promise that resolves when action is taken
@@ -8440,7 +12112,7 @@ const App = {
                 <button class="btn btn-secondary" id="btn-cancel-open">Cancel</button>
                 <button class="btn btn-primary" id="btn-select-open">Select Vault File</button>
             `,
-            onClose: () => {},
+            onClose: () => { },
         });
 
         return new Promise((resolve) => {
@@ -8534,6 +12206,9 @@ const App = {
                 await Storage.loadFromVault(vaultData);
             }
 
+            // Add vault controls to UI (creates theme-toggle)
+            this.addVaultControls();
+
             // Initialize sidebar
             Sidebar.init();
             console.log("Sidebar ready");
@@ -8544,9 +12219,6 @@ const App = {
 
             // Setup global functions
             this.setupGlobalFunctions();
-
-            // Add vault controls to UI
-            this.addVaultControls();
 
             // Initialize AI system
             await this.initializeAI();
@@ -8590,19 +12262,22 @@ const App = {
             const footerDiv = document.createElement("div");
             footerDiv.className = "sidebar-footer";
             footerDiv.innerHTML = `
+                <button class="sidebar-action-btn" id="theme-toggle" title="Toggle theme">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
                 <button class="sidebar-action-btn" id="btn-vault-settings" title="Vault Settings">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    <span>Settings</span>
                 </button>
                 <button class="sidebar-action-btn" id="btn-vault-lock" title="Lock Vault">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0110 0v4"></path>
                     </svg>
-                    <span>Lock</span>
                 </button>
             `;
             sidebar.appendChild(footerDiv);
@@ -8750,7 +12425,9 @@ const App = {
         console.log("  getAttachments() - Get all attachments");
         console.log("  lockVault() - Lock the vault");
         console.log("  getVaultStatus() - Get vault status");
-        console.log("  releaseVaultHandle() - Release file handle for cloud sync");
+        console.log(
+            "  releaseVaultHandle() - Release file handle for cloud sync",
+        );
     },
 };
 
@@ -8771,13 +12448,22 @@ window.addEventListener("beforeunload", async (e) => {
 
 // Save when tab becomes hidden (helps ensure data is saved before switching apps)
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "hidden" && App.isInitialized && !Vault.isLocked) {
+    if (
+        document.visibilityState === "hidden" &&
+        App.isInitialized &&
+        !Vault.isLocked
+    ) {
         // User switched away - save data
-        Storage.saveToVault().then(() => {
-            console.log("Vault: Saved on visibility change");
-        }).catch(err => {
-            console.warn("Vault: Could not save on visibility change:", err);
-        });
+        Storage.saveToVault()
+            .then(() => {
+                console.log("Vault: Saved on visibility change");
+            })
+            .catch((err) => {
+                console.warn(
+                    "Vault: Could not save on visibility change:",
+                    err,
+                );
+            });
     }
 });
 
@@ -8785,7 +12471,7 @@ document.addEventListener("visibilitychange", () => {
 window.App = App;
 
 </script>
-    
+
 <script>
 // Portable mode detection and CORS helper
 (function() {
@@ -8798,4 +12484,5 @@ window.App = App;
 })();
 </script>
 </body>
+
 </html>

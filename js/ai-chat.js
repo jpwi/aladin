@@ -141,8 +141,8 @@ const AIChat = {
                     </button>
                     <button class="ai-action-btn" id="btn-ai-settings-mini" title="AI Settings">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"></path>
+                            <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </button>
                     <button class="ai-action-btn ai-send-btn" id="btn-ai-send-mini" title="Send" disabled>
@@ -553,9 +553,8 @@ const AIChat = {
             <div class="ai-compact-answer">
                 <div class="ai-answer-text">${this.formatMarkdown(compactAnswer)}</div>
                 ${sourcesHtml}
-                ${
-                    hasMore
-                        ? `
+                ${hasMore
+                ? `
                     <button class="ai-expand-btn" data-full="${btoa(encodeURIComponent(fullAnswer))}" onclick="AIChat.expandAnswer(this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 5v14M5 12h14"></path>
@@ -563,8 +562,8 @@ const AIChat = {
                         Show full answer
                     </button>
                 `
-                        : ""
-                }
+                : ""
+            }
             </div>
         `;
 
@@ -722,14 +721,14 @@ const AIChat = {
                         <select id="ai-provider">
                             <option value="">Select a provider...</option>
                             ${Object.entries(providers)
-                                .map(
-                                    ([key, p]) => `
+                    .map(
+                        ([key, p]) => `
                                 <option value="${key}" ${currentConfig.provider === key ? "selected" : ""}>
                                     ${p.name}
                                 </option>
                             `,
-                                )
-                                .join("")}
+                    )
+                    .join("")}
                         </select>
                         <small class="provider-hint" id="provider-hint"></small>
                     </div>
@@ -760,11 +759,10 @@ const AIChat = {
                     <div class="ai-index-section">
                         <label>Knowledge Base Index</label>
                         <div class="ai-index-status" id="ai-index-status">
-                            ${
-                                stats.isIndexed
-                                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
-                                    : `<span class="status-warning">Not indexed</span>`
-                            }
+                            ${stats.isIndexed
+                    ? `<span class="status-ok">✓ ${stats.chunks} sections indexed</span>`
+                    : `<span class="status-warning">Not indexed</span>`
+                }
                         </div>
                         <button class="btn btn-outline" id="btn-reindex-now" style="margin-top: 8px;">
                             🔄 Re-index Content

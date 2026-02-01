@@ -311,6 +311,9 @@ const Editor = {
                         },
                     },
                 },
+                code: {
+                    class: CodeBlockTool,
+                },
             },
 
             onChange: Utils.debounce(async () => {
@@ -322,8 +325,15 @@ const Editor = {
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
                 this.setupSlashCommands();
+                this.setupStarCommands();
+                this.setupHashtagCommands();
+                this.setupMentionCommands();
                 this.setupDragDrop();
+                this.setupBlockDragHandles();
                 this.setupImmediateSave();
+                this.loadTagsFromContent(content.blocks);
+                this.loadPeopleFromStorage();
+                this.loadMentionsFromContent(content.blocks);
                 Sidebar.update(content.blocks);
             },
         });
@@ -386,12 +396,13 @@ const Editor = {
             if (!paragraph) return;
 
             const text = paragraph.textContent;
-            const match = text.match(/^(#{1,6})\s/);
 
-            if (match) {
+            // Check for heading markdown shortcut (# followed by space)
+            const headingMatch = text.match(/^(#{1,6})\s/);
+            if (headingMatch) {
                 e.preventDefault();
 
-                const level = match[1].length;
+                const level = headingMatch[1].length;
                 const headingText = text.replace(/^#{1,6}\s/, "");
 
                 // Get current block index
@@ -415,6 +426,42 @@ const Editor = {
                         true,
                     );
                 }
+                return;
+            }
+
+            // Check for code block markdown shortcut (``` followed by optional language)
+            const codeMatch = text.match(/^```(\w*)$/);
+            if (codeMatch) {
+                e.preventDefault();
+
+                // Resolve language alias to canonical name
+                const languageAlias = codeMatch[1] || '';
+                const language = typeof CodeBlockTool !== 'undefined' && CodeBlockTool.resolveLanguage
+                    ? CodeBlockTool.resolveLanguage(languageAlias)
+                    : (languageAlias || 'javascript');
+
+                // Get current block index
+                const blocks = this.container.querySelectorAll(".ce-block");
+                let blockIndex = -1;
+                blocks.forEach((b, i) => {
+                    if (b === block) blockIndex = i;
+                });
+
+                if (blockIndex >= 0) {
+                    // Delete current block and insert code block
+                    await this.instance.blocks.delete(blockIndex);
+                    await this.instance.blocks.insert(
+                        "code",
+                        {
+                            code: "",
+                            language: language,
+                        },
+                        {},
+                        blockIndex,
+                        true,
+                    );
+                }
+                return;
             }
         });
     },
@@ -423,6 +470,45 @@ const Editor = {
     slashMenu: null,
     slashQuery: "",
     slashSelectedIndex: 0,
+
+    // Star (*) date command menu state to calculate relative dates
+    starMenu: null,
+    starSelectedIndex: 0,
+    starQuery: "",
+    starOptions: [
+        {
+            name: "today",
+            getDate: function () { return Editor.formatDateISO(new Date()); }
+        },
+        {
+            name: "yesterday",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() - 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "tomorrow",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 1); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next week",
+            getDate: function () { const d = new Date(); d.setDate(d.getDate() + 7); return Editor.formatDateISO(d); }
+        },
+        {
+            name: "next month",
+            getDate: function () { const d = new Date(); return Editor.formatDateISO(new Date(d.getFullYear(), d.getMonth() + 1, d.getDate())); }
+        },
+    ],
+
+    // Hashtag command menu state
+    hashtagMenu: null,
+    hashtagSelectedIndex: 0,
+    hashtagQuery: "",
+    allTags: [], // Will be populated from storage
+
+    // Mention (@) command menu state
+    mentionMenu: null,
+    mentionSelectedIndex: 0,
+    mentionQuery: "",
+    allPeople: [], // Will be populated from storage
 
     // Available slash commands
     slashCommands: [
@@ -481,6 +567,13 @@ const Editor = {
             icon: "🖼",
             type: "image",
             data: {},
+        },
+        {
+            name: "Code Block",
+            shortcut: "/code",
+            icon: "</>",
+            type: "code",
+            data: { code: "", language: "javascript" },
         },
     ],
 
@@ -719,6 +812,1545 @@ const Editor = {
         }
     },
 
+
+    // USING @ to input relative date value
+
+    /**
+     * Format date as YYYY-MM-DD string (ISO date format)
+     * @param {Date} date - The date to format
+     * @returns {string} Date in YYYY-MM-DD format
+     */
+    formatDateISO(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
+    /**
+     * Setup star (*) command menu for date insertion
+     */
+    setupStarCommands() {
+        // Create star menu element
+        this.starMenu = document.createElement("div");
+        this.starMenu.className = "star-menu hidden";
+        this.starMenu.id = "star-menu";
+        document.body.appendChild(this.starMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleStarInput(e);
+        });
+
+        // Handle keyboard navigation in star menu - attach to document with capture phase
+        document.addEventListener("keydown", (e) => {
+            if (this.starMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.starSelectedIndex = Math.min(
+                    this.starSelectedIndex + 1,
+                    this.getFilteredStarOptions().length - 1,
+                );
+                this.updateStarMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.starSelectedIndex = Math.max(
+                    this.starSelectedIndex - 1,
+                    0,
+                );
+                this.updateStarMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredStarOptions();
+                if (options.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    this.executeStarCommand(options[this.starSelectedIndex]);
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideStarMenu();
+            }
+        }, true); // Use capture phase
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".star-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideStarMenu();
+            }
+        });
+    },
+
+    /**
+     * Handle input for star (*) commands
+     */
+    handleStarInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Check if text contains *
+        const starIndex = text.lastIndexOf("*");
+        if (starIndex !== -1) {
+            // Check if * is at the end or followed by text
+            const textAfterStar = text.substring(starIndex + 1);
+            this.starQuery = textAfterStar.toLowerCase();
+            this.starSelectedIndex = 0;
+            this.showStarMenu(paragraph, starIndex);
+        } else {
+            this.hideStarMenu();
+        }
+    },
+
+    /**
+     * Get filtered options based on query
+     */
+    getFilteredStarOptions() {
+        if (!this.starQuery) return this.starOptions;
+        return this.starOptions.filter(
+            (opt) => opt.name.toLowerCase().includes(this.starQuery)
+        );
+    },
+
+    /**
+     * Show star menu
+     */
+    showStarMenu(element, starIndex) {
+        const options = this.getFilteredStarOptions();
+        if (options.length === 0) {
+            this.hideStarMenu();
+            return;
+        }
+
+        // Build menu HTML
+        this.starMenu.innerHTML = options
+            .map(
+                (opt, index) => `
+            <div class="star-menu-item ${index === this.starSelectedIndex ? "selected" : ""}" 
+                 data-index="${index}">
+                <span class="star-menu-name">${opt.name}</span>
+                <span class="star-menu-date">${opt.getDate()}</span>
+            </div>
+        `,
+            )
+            .join("");
+
+        // Add click handlers - use mousedown to fire before blur
+        this.starMenu.querySelectorAll(".star-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault(); // Prevent blur
+                e.stopPropagation();
+                const index = parseInt(item.dataset.index);
+                this.executeStarCommand(options[index]);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.starMenu.style.top = `${rect.bottom + 5}px`;
+        this.starMenu.style.left = `${rect.left}px`;
+        this.starMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide star menu
+     */
+    hideStarMenu() {
+        this.starMenu.classList.add("hidden");
+        this.starQuery = "";
+    },
+
+    /**
+     * Update selection highlight in menu
+     */
+    updateStarMenuSelection() {
+        const items = this.starMenu.querySelectorAll(".star-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.starSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute a star command (insert date)
+     */
+    async executeStarCommand(option) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const starIndex = text.lastIndexOf("*");
+
+        if (starIndex !== -1) {
+            // Get the date in YYYY-MM-DD format
+            const dateValue = option.getDate();
+
+            // Replace * and query with the date directly in the DOM
+            const newText = text.substring(0, starIndex) + dateValue;
+            paragraph.textContent = newText;
+
+            // Move cursor to end of inserted date
+            const textNode = paragraph.firstChild;
+            if (textNode) {
+                const newRange = document.createRange();
+                const cursorPos = Math.min(newText.length, textNode.length);
+                newRange.setStart(textNode, cursorPos);
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+            }
+        }
+
+        this.hideStarMenu();
+    },
+
+    // ==========================================
+    // Hashtag Commands (#tag)
+    // ==========================================
+
+    /**
+     * Load existing tags from content blocks and style them in DOM
+     */
+    loadTagsFromContent(blocks) {
+        const tags = new Set();
+        const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = tagRegex.exec(plainText)) !== null) {
+                    tags.add(match[1].toLowerCase());
+                }
+            }
+        });
+
+        this.allTags = Array.from(tags).sort();
+        console.log('Loaded tags:', this.allTags);
+
+        // Style hashtags in DOM after editor renders
+        setTimeout(() => this.styleHashtagsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain hashtags in DOM to styled links
+     * This ensures hashtags from previous sessions are styled correctly
+     */
+    styleHashtagsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            // Skip if all hashtags are already properly styled
+            // Check if there are plain text hashtags (not inside hashtag-link elements)
+
+            // Check for any plain text hashtags (# followed by alphanumeric, not inside an <a> tag)
+            // Skip elements that only have properly styled hashtag-links
+            const hasUnstyledHashtags = this.hasUnstyledHashtags(paragraph);
+
+            if (hasUnstyledHashtags) {
+                this.processHashtagsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled hashtags
+     */
+    hasUnstyledHashtags(element) {
+        // Check for <a> tags containing hashtags but without hashtag-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^#[a-zA-Z0-9_-]+$/.test(text) && !link.classList.contains('hashtag-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a hashtag-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process hashtags in an element - handles both plain text and existing links
+     */
+    processHashtagsInElement(element) {
+        // First, clean up any empty links (from previous bugs)
+        const emptyLinks = element.querySelectorAll('a:empty');
+        emptyLinks.forEach(link => link.remove());
+
+        // Remove links without meaningful text content
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix any <a> tags that contain hashtags but don't have the hashtag-link class
+        // This happens when Editor.js strips our custom class on save/load
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const hashMatch = text.match(/^#([a-zA-Z0-9_-]+)$/);
+            if (hashMatch && !link.classList.contains('hashtag-link')) {
+                // Add the hashtag-link class and data-tag attribute
+                link.classList.add('hashtag-link');
+                link.dataset.tag = hashMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Now process only text nodes that are not inside existing hashtag-links
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Reject if parent is a hashtag-link
+                    if (node.parentElement?.classList?.contains('hashtag-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    // Reject if parent is any <a> tag (they are handled above)
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            // Check if this text node contains a hashtag
+            if (/#[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse to avoid offset issues
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+
+            if (tagRegex.test(text)) {
+                // Reset regex
+                tagRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = tagRegex.exec(text)) !== null) {
+                    // Add text before the hashtag
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    // Create the hashtag link
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'hashtag-link';
+                    link.dataset.tag = match[1];
+                    link.textContent = '#' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                // Add remaining text after last hashtag
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
+    },
+
+    /**
+     * Setup hashtag command menu
+     */
+    setupHashtagCommands() {
+        // Create hashtag menu element
+        this.hashtagMenu = document.createElement("div");
+        this.hashtagMenu.className = "hashtag-menu hidden";
+        this.hashtagMenu.id = "hashtag-menu";
+        document.body.appendChild(this.hashtagMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleHashtagInput(e);
+        });
+
+        // Handle keyboard navigation in hashtag menu
+        document.addEventListener("keydown", (e) => {
+            if (this.hashtagMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredHashtags();
+                this.hashtagSelectedIndex = Math.min(
+                    this.hashtagSelectedIndex + 1,
+                    options.length - 1,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hashtagSelectedIndex = Math.max(
+                    this.hashtagSelectedIndex - 1,
+                    0,
+                );
+                this.updateHashtagMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredHashtags();
+                const query = this.hashtagQuery;
+                const showCreateOption = query && query.length > 0 && !this.allTags.includes(query);
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    // If selected index is on the "create" option or options is empty
+                    if (this.hashtagSelectedIndex >= options.length && showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeHashtagCommand(options[this.hashtagSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeHashtagCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideHashtagMenu();
+            } else if (e.key === " ") {
+                // Space completes current tag input
+                const query = this.hashtagQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeHashtagCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (
+                !e.target.closest(".hashtag-menu") &&
+                !e.target.closest(".ce-block")
+            ) {
+                this.hideHashtagMenu();
+            }
+        });
+
+        // Setup click handler for hashtag links
+        document.addEventListener("click", (e) => {
+            const hashtagLink = e.target.closest(".hashtag-link");
+            if (hashtagLink) {
+                e.preventDefault();
+                const tag = hashtagLink.dataset.tag;
+                if (tag) {
+                    this.showTagOccurrences(tag);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for hashtag commands
+     */
+    handleHashtagInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+
+        // Find the last # that could be the start of a tag being typed
+        // Look for # followed by optional word characters at the end of text or before cursor
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        // Match # followed by optional tag characters at end
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+
+        if (hashMatch) {
+            this.hashtagQuery = hashMatch[1].toLowerCase();
+            this.hashtagSelectedIndex = 0;
+            this.showHashtagMenu(paragraph);
+        } else {
+            this.hideHashtagMenu();
+        }
+    },
+
+    /**
+     * Get cursor offset within element
+     */
+    getCursorOffsetInElement(element) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return 0;
+
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.endContainer, range.endOffset);
+
+        return preCaretRange.toString().length;
+    },
+
+    /**
+     * Get filtered hashtags based on query
+     */
+    getFilteredHashtags() {
+        if (!this.hashtagQuery) return this.allTags.slice(0, 10);
+        return this.allTags.filter(
+            (tag) => tag.toLowerCase().includes(this.hashtagQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show hashtag menu
+     */
+    showHashtagMenu(element) {
+        const filteredTags = this.getFilteredHashtags();
+        const query = this.hashtagQuery;
+
+        // If we have a query that's not an existing tag, show option to create it
+        const showCreateOption = query && query.length > 0 && !this.allTags.includes(query.toLowerCase());
+
+        // If no filtered tags and no create option and no query, hide menu
+        if (filteredTags.length === 0 && !showCreateOption) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        // Build menu HTML
+        let menuHtml = '';
+
+        // Add existing tag suggestions
+        filteredTags.forEach((tag, index) => {
+            menuHtml += `
+                <div class="hashtag-menu-item ${index === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-tag="${tag}">
+                    <span class="hashtag-menu-icon">#</span>
+                    <span class="hashtag-menu-name">${tag}</span>
+                </div>
+            `;
+        });
+
+        // Add "create new tag" option if query doesn't match existing
+        if (showCreateOption) {
+            const createIndex = filteredTags.length;
+            menuHtml += `
+                <div class="hashtag-menu-item hashtag-menu-create ${createIndex === this.hashtagSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-tag="${query}">
+                    <span class="hashtag-menu-icon">+</span>
+                    <span class="hashtag-menu-name">Create #${query}</span>
+                </div>
+            `;
+        }
+
+        if (!menuHtml) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        this.hashtagMenu.innerHTML = menuHtml;
+
+        // Add click handlers
+        this.hashtagMenu.querySelectorAll(".hashtag-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const tag = item.dataset.tag;
+                this.executeHashtagCommand(tag);
+            });
+        });
+
+        // Position menu below the element
+        const rect = element.getBoundingClientRect();
+        this.hashtagMenu.style.top = `${rect.bottom + 5}px`;
+        this.hashtagMenu.style.left = `${rect.left}px`;
+        this.hashtagMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide hashtag menu
+     */
+    hideHashtagMenu() {
+        this.hashtagMenu.classList.add("hidden");
+        this.hashtagQuery = "";
+    },
+
+    /**
+     * Update selection highlight in hashtag menu
+     */
+    updateHashtagMenuSelection() {
+        const items = this.hashtagMenu.querySelectorAll(".hashtag-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle(
+                "selected",
+                index === this.hashtagSelectedIndex,
+            );
+        });
+    },
+
+    /**
+     * Execute a hashtag command - insert tag as clickable link
+     */
+    async executeHashtagCommand(tagName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(
+            ".ce-paragraph, [contenteditable]",
+        );
+        if (!paragraph) return;
+
+        // Get current text and find the # position
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_-]*)$/);
+        if (!hashMatch) {
+            this.hideHashtagMenu();
+            return;
+        }
+
+        const hashIndex = textBeforeCursor.lastIndexOf('#');
+        const beforeHash = text.substring(0, hashIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        // Create the hashtag link HTML
+        const tagLink = `<a href="#" class="hashtag-link" data-tag="${tagName}">#${tagName}</a>`;
+
+        // Update paragraph with the link
+        paragraph.innerHTML = beforeHash + tagLink + ' ' + afterCursor;
+
+        // Add tag to allTags if new
+        if (!this.allTags.includes(tagName.toLowerCase())) {
+            this.allTags.push(tagName.toLowerCase());
+            this.allTags.sort();
+        }
+
+        // Move cursor after the inserted tag
+        this.moveCursorToEnd(paragraph);
+
+        this.hideHashtagMenu();
+
+        // Trigger save
+        await this.save();
+    },
+
+    /**
+     * Move cursor to end of element
+     */
+    moveCursorToEnd(element) {
+        const range = document.createRange();
+        const selection = window.getSelection();
+        range.selectNodeContents(element);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    },
+
+    /**
+     * Show modal with all occurrences of a tag
+     */
+    async showTagOccurrences(tagName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const tagRegex = new RegExp(`#${tagName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (tagRegex.test(plainText)) {
+                        // Get context around the tag
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const tagIndex = plainText.toLowerCase().indexOf('#' + tagName.toLowerCase());
+                            const start = Math.max(0, tagIndex - 40);
+                            const end = Math.min(plainText.length, tagIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+
+                        // Find parent heading for context
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    // Reset regex lastIndex
+                    tagRegex.lastIndex = 0;
+                }
+            });
+
+            // Build modal content
+            let modalBody = `
+                <div class="tag-occurrences">
+                    <div class="tag-header">
+                        <span class="tag-badge">#${Utils.escapeHtml(tagName)}</span>
+                        <span class="tag-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="tag-empty">No occurrences found for this tag.</p>`;
+            } else {
+                modalBody += `<div class="tag-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="tag-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="tag-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="tag-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Tag: #${tagName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            // Add click handlers to jump to occurrence
+            setTimeout(() => {
+                document.querySelectorAll('.tag-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing tag occurrences:', error);
+        }
+    },
+
+    /**
+     * Scroll to a specific block by ID
+     */
+    scrollToBlock(blockId) {
+        const blockElement = document.getElementById(blockId);
+        if (blockElement) {
+            blockElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            blockElement.classList.add('highlight-flash');
+            setTimeout(() => {
+                blockElement.classList.remove('highlight-flash');
+            }, 2000);
+        }
+    },
+
+    // ==========================================
+    // Mention Commands (@person)
+    // ==========================================
+
+    /**
+     * Load people from storage
+     */
+    async loadPeopleFromStorage() {
+        try {
+            const storedPeople = await Storage.getSetting('people', []);
+            this.allPeople = Array.isArray(storedPeople) ? storedPeople.sort() : [];
+            console.log('Loaded people:', this.allPeople);
+        } catch (error) {
+            console.error('Failed to load people:', error);
+            this.allPeople = [];
+        }
+    },
+
+    /**
+     * Save people to storage
+     */
+    async savePeopleToStorage() {
+        try {
+            await Storage.saveSetting('people', this.allPeople);
+        } catch (error) {
+            console.error('Failed to save people:', error);
+        }
+    },
+
+    /**
+     * Load mentions from content blocks and style them in DOM
+     */
+    loadMentionsFromContent(blocks) {
+        const people = new Set(this.allPeople);
+        const mentionRegex = /@([a-zA-Z0-9_-]+(?:\s+[a-zA-Z0-9_-]+)?)/g;
+
+        blocks.forEach(block => {
+            if (block.data?.text) {
+                // Strip HTML tags to get plain text
+                const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                let match;
+                while ((match = mentionRegex.exec(plainText)) !== null) {
+                    people.add(match[1]);
+                }
+            }
+        });
+
+        this.allPeople = Array.from(people).sort();
+
+        // Style mentions in DOM after editor renders
+        setTimeout(() => this.styleMentionsInDOM(), 100);
+    },
+
+    /**
+     * Convert plain mentions in DOM to styled links
+     */
+    styleMentionsInDOM() {
+        const paragraphs = this.container.querySelectorAll('.ce-paragraph');
+
+        paragraphs.forEach(paragraph => {
+            const hasUnstyledMentions = this.hasUnstyledMentions(paragraph);
+            if (hasUnstyledMentions) {
+                this.processMentionsInElement(paragraph);
+            }
+        });
+    },
+
+    /**
+     * Check if an element contains unstyled mentions
+     */
+    hasUnstyledMentions(element) {
+        // Check for <a> tags containing mentions but without mention-link class
+        const links = element.querySelectorAll('a');
+        for (const link of links) {
+            const text = link.textContent.trim();
+            if (/^@[a-zA-Z0-9_-]+/.test(text) && !link.classList.contains('mention-link')) {
+                return true;
+            }
+        }
+
+        // Get all text nodes that are NOT inside a mention-link or any <a> tag
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    /**
+     * Process mentions in an element - handles both plain text and existing links
+     */
+    processMentionsInElement(element) {
+        // Clean up empty links
+        element.querySelectorAll('a:empty').forEach(link => link.remove());
+        element.querySelectorAll('a').forEach(link => {
+            if (!link.textContent.trim()) {
+                link.remove();
+            }
+        });
+
+        // Fix <a> tags containing mentions but missing mention-link class
+        element.querySelectorAll('a').forEach(link => {
+            const text = link.textContent.trim();
+            const mentionMatch = text.match(/^@([a-zA-Z0-9_-]+)$/);
+            if (mentionMatch && !link.classList.contains('mention-link')) {
+                link.classList.add('mention-link');
+                link.dataset.person = mentionMatch[1];
+                link.href = '#';
+            }
+        });
+
+        // Process text nodes
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    if (node.parentElement?.classList?.contains('mention-link')) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    if (node.parentElement?.tagName === 'A') {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                }
+            },
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            if (/@[a-zA-Z0-9_-]+/.test(node.textContent)) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            const mentionRegex = /@([a-zA-Z0-9_-]+)/g;
+
+            if (mentionRegex.test(text)) {
+                mentionRegex.lastIndex = 0;
+
+                const fragment = document.createDocumentFragment();
+                let lastIndex = 0;
+                let match;
+
+                while ((match = mentionRegex.exec(text)) !== null) {
+                    if (match.index > lastIndex) {
+                        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+                    }
+
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.className = 'mention-link';
+                    link.dataset.person = match[1];
+                    link.textContent = '@' + match[1];
+                    fragment.appendChild(link);
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                if (lastIndex < text.length) {
+                    fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+                }
+
+                textNode.parentNode.replaceChild(fragment, textNode);
+            }
+        });
+    },
+
+    /**
+     * Setup mention (@) command menu
+     */
+    setupMentionCommands() {
+        // Create mention menu element
+        this.mentionMenu = document.createElement("div");
+        this.mentionMenu.className = "mention-menu hidden";
+        this.mentionMenu.id = "mention-menu";
+        document.body.appendChild(this.mentionMenu);
+
+        // Listen for input in editor
+        this.container.addEventListener("input", (e) => {
+            this.handleMentionInput(e);
+        });
+
+        // Handle keyboard navigation in mention menu
+        document.addEventListener("keydown", (e) => {
+            if (this.mentionMenu.classList.contains("hidden")) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                e.stopPropagation();
+                const options = this.getFilteredPeople();
+                const showCreateOption = this.mentionQuery && this.mentionQuery.length > 0 &&
+                    !this.allPeople.some(p => p.toLowerCase() === this.mentionQuery.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+                this.mentionSelectedIndex = Math.min(this.mentionSelectedIndex + 1, totalOptions - 1);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.mentionSelectedIndex = Math.max(this.mentionSelectedIndex - 1, 0);
+                this.updateMentionMenuSelection();
+            } else if (e.key === "Enter" || e.key === "Tab") {
+                const options = this.getFilteredPeople();
+                const query = this.mentionQuery;
+                const showCreateOption = query && query.length > 0 &&
+                    !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+                const totalOptions = options.length + (showCreateOption ? 1 : 0);
+
+                if (totalOptions > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+
+                    if (this.mentionSelectedIndex >= options.length && showCreateOption) {
+                        this.executeMentionCommand(query);
+                    } else if (options.length > 0) {
+                        this.executeMentionCommand(options[this.mentionSelectedIndex]);
+                    } else if (showCreateOption) {
+                        this.executeMentionCommand(query);
+                    }
+                }
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                this.hideMentionMenu();
+            } else if (e.key === " ") {
+                const query = this.mentionQuery;
+                if (query && query.length > 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.executeMentionCommand(query);
+                }
+            }
+        }, true);
+
+        // Hide menu when clicking outside
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".mention-menu") && !e.target.closest(".ce-block")) {
+                this.hideMentionMenu();
+            }
+        });
+
+        // Setup click handler for mention links
+        document.addEventListener("click", (e) => {
+            const mentionLink = e.target.closest(".mention-link");
+            if (mentionLink) {
+                e.preventDefault();
+                const person = mentionLink.dataset.person;
+                if (person) {
+                    this.showMentionOccurrences(person);
+                }
+            }
+        });
+    },
+
+    /**
+     * Handle input for mention commands
+     */
+    handleMentionInput(e) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        // Match @ followed by optional name characters at end
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+
+        if (mentionMatch) {
+            this.mentionQuery = mentionMatch[1].toLowerCase();
+            this.mentionSelectedIndex = 0;
+            this.showMentionMenu(paragraph);
+        } else {
+            this.hideMentionMenu();
+        }
+    },
+
+    /**
+     * Get filtered people based on query
+     */
+    getFilteredPeople() {
+        if (!this.mentionQuery) return this.allPeople.slice(0, 10);
+        return this.allPeople.filter(
+            (person) => person.toLowerCase().includes(this.mentionQuery)
+        ).slice(0, 10);
+    },
+
+    /**
+     * Show mention menu
+     */
+    showMentionMenu(element) {
+        const filteredPeople = this.getFilteredPeople();
+        const query = this.mentionQuery;
+
+        const showCreateOption = query && query.length > 0 &&
+            !this.allPeople.some(p => p.toLowerCase() === query.toLowerCase());
+
+        if (filteredPeople.length === 0 && !showCreateOption) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        let menuHtml = '';
+
+        filteredPeople.forEach((person, index) => {
+            menuHtml += `
+                <div class="mention-menu-item ${index === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${index}" data-person="${Utils.escapeHtml(person)}">
+                    <span class="mention-menu-icon">@</span>
+                    <span class="mention-menu-name">${Utils.escapeHtml(person)}</span>
+                </div>
+            `;
+        });
+
+        if (showCreateOption) {
+            const createIndex = filteredPeople.length;
+            menuHtml += `
+                <div class="mention-menu-item mention-menu-create ${createIndex === this.mentionSelectedIndex ? "selected" : ""}" 
+                     data-index="${createIndex}" data-person="${Utils.escapeHtml(query)}">
+                    <span class="mention-menu-icon">+</span>
+                    <span class="mention-menu-name">Add @${Utils.escapeHtml(query)}</span>
+                </div>
+            `;
+        }
+
+        if (!menuHtml) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        this.mentionMenu.innerHTML = menuHtml;
+
+        this.mentionMenu.querySelectorAll(".mention-menu-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const person = item.dataset.person;
+                this.executeMentionCommand(person);
+            });
+        });
+
+        const rect = element.getBoundingClientRect();
+        this.mentionMenu.style.top = `${rect.bottom + 5}px`;
+        this.mentionMenu.style.left = `${rect.left}px`;
+        this.mentionMenu.classList.remove("hidden");
+    },
+
+    /**
+     * Hide mention menu
+     */
+    hideMentionMenu() {
+        this.mentionMenu.classList.add("hidden");
+        this.mentionQuery = "";
+    },
+
+    /**
+     * Update selection highlight in mention menu
+     */
+    updateMentionMenuSelection() {
+        const items = this.mentionMenu.querySelectorAll(".mention-menu-item");
+        items.forEach((item, index) => {
+            item.classList.toggle("selected", index === this.mentionSelectedIndex);
+        });
+    },
+
+    /**
+     * Execute a mention command - insert person as clickable link
+     */
+    async executeMentionCommand(personName) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const block = range.startContainer.parentElement?.closest(".ce-block");
+        if (!block) return;
+
+        const paragraph = block.querySelector(".ce-paragraph, [contenteditable]");
+        if (!paragraph) return;
+
+        const text = paragraph.textContent || "";
+        const cursorOffset = this.getCursorOffsetInElement(paragraph);
+        const textBeforeCursor = text.substring(0, cursorOffset);
+
+        const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_-]*)$/);
+        if (!mentionMatch) {
+            this.hideMentionMenu();
+            return;
+        }
+
+        const atIndex = textBeforeCursor.lastIndexOf('@');
+        const beforeAt = text.substring(0, atIndex);
+        const afterCursor = text.substring(cursorOffset);
+
+        const mentionLink = `<a href="#" class="mention-link" data-person="${personName}">@${personName}</a>`;
+
+        paragraph.innerHTML = beforeAt + mentionLink + ' ' + afterCursor;
+
+        // Add person to allPeople if new
+        if (!this.allPeople.some(p => p.toLowerCase() === personName.toLowerCase())) {
+            this.allPeople.push(personName);
+            this.allPeople.sort();
+            await this.savePeopleToStorage();
+        }
+
+        this.moveCursorToEnd(paragraph);
+        this.hideMentionMenu();
+        await this.save();
+    },
+
+    /**
+     * Show modal with all occurrences of a person mention
+     */
+    async showMentionOccurrences(personName) {
+        try {
+            const data = await this.instance.save();
+            const occurrences = [];
+            const mentionRegex = new RegExp(`@${personName}\\b`, 'gi');
+
+            data.blocks.forEach((block, index) => {
+                if (block.data?.text) {
+                    const plainText = block.data.text.replace(/<[^>]*>/g, '');
+                    if (mentionRegex.test(plainText)) {
+                        let context = plainText;
+                        if (context.length > 100) {
+                            const mentionIndex = plainText.toLowerCase().indexOf('@' + personName.toLowerCase());
+                            const start = Math.max(0, mentionIndex - 40);
+                            const end = Math.min(plainText.length, mentionIndex + 60);
+                            context = (start > 0 ? '...' : '') + plainText.substring(start, end) + (end < plainText.length ? '...' : '');
+                        }
+
+                        let parentHeading = 'Document';
+                        for (let i = index - 1; i >= 0; i--) {
+                            if (data.blocks[i].type === 'header') {
+                                parentHeading = data.blocks[i].data?.text || 'Untitled';
+                                break;
+                            }
+                        }
+
+                        occurrences.push({
+                            blockId: block.id,
+                            blockIndex: index,
+                            context: context,
+                            parentHeading: parentHeading,
+                            type: block.type
+                        });
+                    }
+                    mentionRegex.lastIndex = 0;
+                }
+            });
+
+            let modalBody = `
+                <div class="mention-occurrences">
+                    <div class="mention-header">
+                        <span class="mention-badge">@${Utils.escapeHtml(personName)}</span>
+                        <span class="mention-count">${occurrences.length} occurrence${occurrences.length !== 1 ? 's' : ''}</span>
+                    </div>
+            `;
+
+            if (occurrences.length === 0) {
+                modalBody += `<p class="mention-empty">No occurrences found for this person.</p>`;
+            } else {
+                modalBody += `<div class="mention-occurrence-list">`;
+                occurrences.forEach((occ, i) => {
+                    modalBody += `
+                        <div class="mention-occurrence-item" data-block-id="${occ.blockId}">
+                            <div class="mention-occurrence-section">${Utils.escapeHtml(occ.parentHeading)}</div>
+                            <div class="mention-occurrence-context">${Utils.escapeHtml(occ.context)}</div>
+                        </div>
+                    `;
+                });
+                modalBody += `</div>`;
+            }
+
+            modalBody += `</div>`;
+
+            Modal.show({
+                title: `Person: @${personName}`,
+                allowClose: true,
+                body: modalBody,
+                footer: `<button class="btn btn-secondary" onclick="Modal.hide()">Close</button>`,
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('.mention-occurrence-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const blockId = item.dataset.blockId;
+                        Modal.hide();
+                        this.scrollToBlock(blockId);
+                    });
+                });
+            }, 100);
+
+        } catch (error) {
+            console.error('Error showing mention occurrences:', error);
+        }
+    },
+
+    // Block drag state
+    draggedBlock: null,
+    draggedBlockIndex: null,
+    dropIndicator: null,
+
+    /**
+     * Setup drag handles for block reordering
+     * Enhances the existing Editor.js toolbar settings button with drag functionality
+     */
+    setupBlockDragHandles() {
+        // Create drop indicator element
+        this.dropIndicator = document.createElement("div");
+        this.dropIndicator.className = "block-drop-indicator hidden";
+        document.body.appendChild(this.dropIndicator);
+
+        // Observe DOM changes to enhance Editor.js toolbars with drag functionality
+        const observer = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+
+        observer.observe(this.container, {
+            childList: true,
+            subtree: true,
+        });
+
+        // Also observe the document body for the toolbar (Editor.js may append it there)
+        const bodyObserver = new MutationObserver(() => {
+            this.enhanceToolbarWithDrag();
+        });
+        bodyObserver.observe(document.body, {
+            childList: true,
+            subtree: false,
+        });
+
+        // Initial setup
+        this.enhanceToolbarWithDrag();
+        this.setupBlockDropZones();
+    },
+
+    /**
+     * Enhance Editor.js toolbar settings button with drag functionality
+     */
+    enhanceToolbarWithDrag() {
+        // Find the Editor.js settings button (the 6-dot button)
+        const settingsBtn = document.querySelector('.ce-toolbar__settings-btn');
+        if (!settingsBtn || settingsBtn.dataset.dragEnhanced) return;
+
+        settingsBtn.dataset.dragEnhanced = 'true';
+        settingsBtn.draggable = true;
+        settingsBtn.title = 'Drag to reorder • Click for settings';
+        settingsBtn.style.cursor = 'grab';
+
+        // Drag start on settings button
+        settingsBtn.addEventListener('dragstart', (e) => {
+            // Find current focused block
+            const focusedBlock = document.querySelector('.ce-block--focused');
+            if (!focusedBlock) {
+                e.preventDefault();
+                return;
+            }
+
+            this.draggedBlock = focusedBlock;
+            this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
+            focusedBlock.classList.add('dragging');
+
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'block');
+
+            this.container.classList.add('block-dragging');
+
+            // Prevent text selection during drag
+            document.body.style.userSelect = 'none';
+        });
+
+        // Drag end
+        settingsBtn.addEventListener('dragend', (e) => {
+            if (this.draggedBlock) {
+                this.draggedBlock.classList.remove('dragging');
+            }
+            this.container.classList.remove('block-dragging');
+            this.dropIndicator.classList.add('hidden');
+            this.draggedBlock = null;
+            this.draggedBlockIndex = null;
+
+            // Re-enable text selection
+            document.body.style.userSelect = '';
+
+            // Remove all drag-over classes
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                b.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+        });
+    },
+
+    /**
+     * Setup drop zones on all blocks
+     */
+    setupBlockDropZones() {
+        // Use event delegation on the container for drop zones
+        this.container.addEventListener('dragover', (e) => {
+            if (!this.draggedBlock) return;
+
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            // Clear all previous indicators
+            this.container.querySelectorAll('.ce-block').forEach(b => {
+                if (b !== block) {
+                    b.classList.remove('drag-over-top', 'drag-over-bottom');
+                }
+            });
+
+            // Determine if dropping above or below this block
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+
+            // Clear previous indicators on this block
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            // Add appropriate indicator
+            if (isAbove) {
+                block.classList.add('drag-over-top');
+            } else {
+                block.classList.add('drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('dragleave', (e) => {
+            const block = e.target.closest('.ce-block');
+            if (block && !block.contains(e.relatedTarget)) {
+                block.classList.remove('drag-over-top', 'drag-over-bottom');
+            }
+        });
+
+        this.container.addEventListener('drop', async (e) => {
+            if (!this.draggedBlock) return;
+
+            const block = e.target.closest('.ce-block');
+            if (!block || this.draggedBlock === block) return;
+
+            e.preventDefault();
+
+            const fromIndex = this.draggedBlockIndex;
+            const toBlockIndex = this.getBlockIndex(block);
+
+            // Determine if dropping above or below
+            const rect = block.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            const isAbove = e.clientY < midpoint;
+
+            let toIndex = isAbove ? toBlockIndex : toBlockIndex + 1;
+
+            // Adjust if moving down (since the block will be removed first)
+            if (fromIndex < toIndex) {
+                toIndex--;
+            }
+
+            // Clear indicators
+            block.classList.remove('drag-over-top', 'drag-over-bottom');
+
+            // Move the block using Editor.js API
+            if (fromIndex !== toIndex && fromIndex >= 0) {
+                try {
+                    await this.instance.blocks.move(toIndex, fromIndex);
+                    await this.save();
+                    console.log(`Block moved from ${fromIndex} to ${toIndex}`);
+                } catch (error) {
+                    console.error('Failed to move block:', error);
+                }
+            }
+        });
+    },
+
+    /**
+     * Get the index of a block element
+     */
+    getBlockIndex(blockElement) {
+        const blocks = this.container.querySelectorAll('.ce-block');
+        let index = -1;
+        blocks.forEach((b, i) => {
+            if (b === blockElement) index = i;
+        });
+        return index;
+    },
+
     /**
      * Setup drag and drop for files
      */
@@ -872,7 +2504,7 @@ const Editor = {
         try {
             // First, capture empty blocks from DOM before Editor.js filters them
             const emptyBlockIds = this.captureEmptyBlockIds();
-            
+
             const data = await this.instance.save();
 
             // Ensure all blocks have IDs
@@ -983,17 +2615,20 @@ const Editor = {
      * Editor.js strips empty blocks, so we mark them with a special invisible character
      */
     preserveSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'paragraph') {
-                const text = block.data?.text || '';
+        return blocks.map((block) => {
+            if (block.type === "paragraph") {
+                const text = block.data?.text || "";
                 // Check if paragraph is empty or only whitespace/br tags
-                const stripped = text.replace(/<br\s*\/?>/gi, '').replace(/&nbsp;/gi, '').trim();
-                if (stripped === '' || stripped === '\u200B') {
+                const stripped = text
+                    .replace(/<br\s*\/?>/gi, "")
+                    .replace(/&nbsp;/gi, "")
+                    .trim();
+                if (stripped === "" || stripped === "\u200B") {
                     // Mark as spacer for storage
                     return {
                         ...block,
-                        type: 'spacer',
-                        data: { preserved: true }
+                        type: "spacer",
+                        data: { preserved: true },
                     };
                 }
             }
@@ -1005,13 +2640,13 @@ const Editor = {
      * Restore spacer markers back to empty paragraphs for editing
      */
     restoreSpacers(blocks) {
-        return blocks.map(block => {
-            if (block.type === 'spacer' && block.data?.preserved) {
+        return blocks.map((block) => {
+            if (block.type === "spacer" && block.data?.preserved) {
                 // Restore as empty paragraph with zero-width space to prevent Editor.js from removing
                 return {
                     ...block,
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
             }
             return block;
@@ -1023,29 +2658,35 @@ const Editor = {
      */
     captureEmptyBlockIds() {
         const emptyBlocks = [];
-        const blockElements = this.container.querySelectorAll('.ce-block');
-        
+        const blockElements = this.container.querySelectorAll(".ce-block");
+
         blockElements.forEach((blockEl, index) => {
-            const contentEl = blockEl.querySelector('.ce-paragraph, [contenteditable="true"]');
+            const contentEl = blockEl.querySelector(
+                '.ce-paragraph, [contenteditable="true"]',
+            );
             if (contentEl) {
-                const text = contentEl.textContent?.trim() || '';
-                const innerHTML = contentEl.innerHTML?.trim() || '';
-                
+                const text = contentEl.textContent?.trim() || "";
+                const innerHTML = contentEl.innerHTML?.trim() || "";
+
                 // Check if the block is effectively empty
-                const isEmptyText = text === '' || text === '\u200B';
-                const isEmptyHtml = innerHTML === '' || innerHTML === '<br>' || innerHTML === '&nbsp;';
-                
+                const isEmptyText = text === "" || text === "\u200B";
+                const isEmptyHtml =
+                    innerHTML === "" ||
+                    innerHTML === "<br>" ||
+                    innerHTML === "&nbsp;";
+
                 if (isEmptyText || isEmptyHtml) {
-                    const blockId = blockEl.getAttribute('data-id') || blockEl.id;
+                    const blockId =
+                        blockEl.getAttribute("data-id") || blockEl.id;
                     emptyBlocks.push({
                         id: blockId,
                         index: index,
-                        type: 'paragraph'
+                        type: "paragraph",
                     });
                 }
             }
         });
-        
+
         return emptyBlocks;
     },
 
@@ -1058,30 +2699,32 @@ const Editor = {
         }
 
         // Build a set of existing block IDs
-        const existingIds = new Set(blocks.map(b => b.id));
-        
+        const existingIds = new Set(blocks.map((b) => b.id));
+
         // Create a new array with empty blocks reinserted
         const result = [...blocks];
-        
+
         // Sort by index to insert in correct order
-        const sortedEmpty = [...emptyBlockIds].sort((a, b) => a.index - b.index);
-        
+        const sortedEmpty = [...emptyBlockIds].sort(
+            (a, b) => a.index - b.index,
+        );
+
         for (const empty of sortedEmpty) {
             // Only reinsert if this block was stripped (not in existing blocks)
             if (!existingIds.has(empty.id)) {
                 // Create empty paragraph block
                 const emptyBlock = {
                     id: empty.id || Utils.generateId(),
-                    type: 'paragraph',
-                    data: { text: '<br>' }
+                    type: "paragraph",
+                    data: { text: "<br>" },
                 };
-                
+
                 // Insert at the original position (capped to array length)
                 const insertIndex = Math.min(empty.index, result.length);
                 result.splice(insertIndex, 0, emptyBlock);
             }
         }
-        
+
         return result;
     },
 };
