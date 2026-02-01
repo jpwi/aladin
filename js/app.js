@@ -506,12 +506,6 @@ const App = {
                         <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                 </button>
-                <button class="sidebar-action-btn" id="btn-vault-lock" title="Lock Vault">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0110 0v4"></path>
-                    </svg>
-                </button>
             `;
             sidebar.appendChild(footerDiv);
 
@@ -520,12 +514,6 @@ const App = {
                 .getElementById("btn-vault-settings")
                 ?.addEventListener("click", () => {
                     this.showVaultSettings();
-                });
-
-            document
-                .getElementById("btn-vault-lock")
-                ?.addEventListener("click", () => {
-                    this.lockVault();
                 });
         }
     },
