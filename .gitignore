@@ -32,3 +32,6 @@ test-results/
 
 # GitHub prompts (local only)
 .github/prompts/
+
+# Dist folder
+dist/
