@@ -924,10 +924,10 @@ const AIChat = {
                         </ol>
                     `;
                 } else if (provider === "gemini") {
-                    modelInput.placeholder = "gemini-1.5-flash";
-                    modelHint.textContent = "Recommended: gemini-1.5-flash";
+                    modelInput.placeholder = "gemini-2.5-flash";
+                    modelHint.textContent = "Recommended: gemini-2.5-flash (fast & free tier)";
                     if (!modelInput.value)
-                        modelInput.value = "gemini-1.5-flash";
+                        modelInput.value = "gemini-2.5-flash";
                     embeddingInput.placeholder = "text-embedding-004";
                     embeddingHint.textContent = "Use: text-embedding-004";
                     if (!embeddingInput.value)
@@ -936,7 +936,7 @@ const AIChat = {
                         <p><strong>✨ Gemini Setup:</strong></p>
                         <ol style="margin: 8px 0 0 16px; font-size: 12px;">
                             <li>Get API key from <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a></li>
-                            <li>Recommended: gemini-1.5-flash (fast) or gemini-1.5-pro</li>
+                            <li>Recommended: gemini-2.5-flash (fast) or gemini-2.5-pro (advanced)</li>
                         </ol>
                     `;
                 }

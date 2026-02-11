@@ -42,7 +42,7 @@ const AI = {
                 "https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent",
             chatEndpoint:
                 "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-            models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"],
+            models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
             embeddingModels: ["text-embedding-004"],
             requiresApiKey: true,
         },
@@ -980,23 +980,36 @@ Never explain your process. Never list sources separately.`,
      * Gemini chat
      */
     async chatGemini(messages) {
-        const model = this.config.model || "gemini-1.5-flash";
+        const model = this.config.model || "gemini-2.5-flash";
         const url =
             this.providers.gemini.chatEndpoint.replace("{model}", model) +
             `?key=${this.config.apiKey}`;
 
-        // Convert messages to Gemini format
-        const contents = messages.map((msg) => ({
-            role: msg.role === "assistant" ? "model" : "user",
-            parts: [{ text: msg.content }],
-        }));
+        // Extract system instruction (Gemini supports it natively)
+        let systemInstruction = null;
+        const chatMessages = [];
 
-        // Gemini doesn't support system messages the same way
-        if (contents[0].role === "user" && messages[0].role === "system") {
-            contents[0].parts[0].text =
-                messages[0].content + "\n\n" + contents[1].parts[0].text;
-            contents.splice(1, 1);
-            contents[0].role = "user";
+        for (const msg of messages) {
+            if (msg.role === "system") {
+                systemInstruction = { parts: [{ text: msg.content }] };
+            } else {
+                chatMessages.push({
+                    role: msg.role === "assistant" ? "model" : "user",
+                    parts: [{ text: msg.content }],
+                });
+            }
+        }
+
+        const requestBody = {
+            contents: chatMessages,
+            generationConfig: {
+                temperature: this.config.temperature,
+                maxOutputTokens: this.config.maxTokens,
+            },
+        };
+
+        if (systemInstruction) {
+            requestBody.systemInstruction = systemInstruction;
         }
 
         const response = await fetch(url, {
@@ -1004,13 +1017,7 @@ Never explain your process. Never list sources separately.`,
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                contents: contents,
-                generationConfig: {
-                    temperature: this.config.temperature,
-                    maxOutputTokens: this.config.maxTokens,
-                },
-            }),
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
