@@ -331,6 +331,7 @@ const Editor = {
                 this.setupDragDrop();
                 this.setupBlockDragHandles();
                 this.setupImmediateSave();
+                this.setupMultiBlockSelection();
                 this.loadTagsFromContent(content.blocks);
                 this.loadPeopleFromStorage();
                 this.loadMentionsFromContent(content.blocks);
@@ -2214,6 +2215,9 @@ const Editor = {
         settingsBtn.title = 'Drag to reorder • Click for settings';
         settingsBtn.style.cursor = 'grab';
 
+        // Track drag state to suppress click-to-open-settings after drag
+        let didDrag = false;
+
         // Drag start on settings button
         settingsBtn.addEventListener('dragstart', (e) => {
             // Find current focused block
@@ -2222,6 +2226,8 @@ const Editor = {
                 e.preventDefault();
                 return;
             }
+
+            didDrag = true;
 
             this.draggedBlock = focusedBlock;
             this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
@@ -2234,7 +2240,23 @@ const Editor = {
 
             // Prevent text selection during drag
             document.body.style.userSelect = 'none';
+
+            // Close any open settings popover immediately
+            this._closeSettingsPopover();
         });
+
+        // Suppress the click that fires after drag ends
+        settingsBtn.addEventListener('click', (e) => {
+            if (didDrag) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                didDrag = false;
+
+                // Also close the settings popover if it managed to open
+                requestAnimationFrame(() => this._closeSettingsPopover());
+                return;
+            }
+        }, true); // capture phase to fire before Editor.js handler
 
         // Drag end
         settingsBtn.addEventListener('dragend', (e) => {
@@ -2253,6 +2275,30 @@ const Editor = {
             this.container.querySelectorAll('.ce-block').forEach(b => {
                 b.classList.remove('drag-over-top', 'drag-over-bottom');
             });
+
+            // Close settings popover that may have opened due to click
+            requestAnimationFrame(() => this._closeSettingsPopover());
+
+            // Reset didDrag after a short delay (click fires after dragend)
+            setTimeout(() => { didDrag = false; }, 200);
+        });
+    },
+
+    /**
+     * Close the Editor.js settings popover if it is open
+     */
+    _closeSettingsPopover() {
+        // Editor.js uses ce-popover for the settings menu
+        const popovers = document.querySelectorAll('.ce-popover--opened, .ce-settings--opened, .ce-popover:not(.ce-popover--hidden)');
+        popovers.forEach(p => {
+            // Click outside to close, or add hidden class
+            if (p.classList.contains('ce-popover--opened')) {
+                p.classList.remove('ce-popover--opened');
+                p.classList.add('ce-popover--hidden');
+            }
+            if (p.classList.contains('ce-settings--opened')) {
+                p.classList.remove('ce-settings--opened');
+            }
         });
     },
 
@@ -2549,6 +2595,186 @@ const Editor = {
         this.cleanupTimeout = setTimeout(async () => {
             await FileHandler.cleanupOrphanedAttachments(blocks);
         }, 10000);
+    },
+
+    // ==========================================
+    // Multi-Block Selection (SHIFT+click)
+    // ==========================================
+
+    // Selection anchor state
+    _selectionAnchor: null,
+
+    /**
+     * Setup multi-block SHIFT+click selection across Editor.js blocks.
+     * Editor.js uses separate contenteditable elements per block, so native
+     * SHIFT+click cannot cross block boundaries. This handler bridges the gap.
+     */
+    setupMultiBlockSelection() {
+        const editorContainer = this.container;
+
+        // On mousedown (without Shift) — record the anchor position
+        editorContainer.addEventListener('mousedown', (e) => {
+            if (e.shiftKey) return; // Shift+click is handled separately
+
+            // Record anchor on next tick so the browser places the caret first
+            requestAnimationFrame(() => {
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return;
+
+                const range = sel.getRangeAt(0);
+                const block = this._closestBlock(range.startContainer);
+                if (!block) return;
+
+                this._selectionAnchor = {
+                    node: range.startContainer,
+                    offset: range.startOffset,
+                    block: block,
+                };
+            });
+        });
+
+        // On Shift+mousedown — prevent default single-block behaviour so
+        // we can create a cross-block range in the mouseup handler instead.
+        editorContainer.addEventListener('mousedown', (e) => {
+            if (!e.shiftKey) return;
+            if (!this._selectionAnchor) return;
+
+            const targetBlock = this._closestBlock(e.target);
+            if (!targetBlock) return;
+
+            // Only intercept when the click lands in a *different* block
+            if (targetBlock === this._selectionAnchor.block) return;
+
+            // Prevent the browser's native (broken cross-CE) selection
+            e.preventDefault();
+        });
+
+        // On Shift+mouseup — build the cross-block selection
+        editorContainer.addEventListener('mouseup', (e) => {
+            if (!e.shiftKey) return;
+            if (!this._selectionAnchor) return;
+
+            const targetBlock = this._closestBlock(e.target);
+            if (!targetBlock) return;
+
+            // Same block → let native selection handle it
+            if (targetBlock === this._selectionAnchor.block) return;
+
+            // Determine document order of anchor and target blocks
+            const blocks = Array.from(editorContainer.querySelectorAll('.ce-block'));
+            const anchorIdx = blocks.indexOf(this._selectionAnchor.block);
+            const targetIdx = blocks.indexOf(targetBlock);
+
+            if (anchorIdx === -1 || targetIdx === -1) return;
+
+            const isForward = anchorIdx < targetIdx;
+            const startBlock = isForward ? this._selectionAnchor.block : targetBlock;
+            const endBlock = isForward ? targetBlock : this._selectionAnchor.block;
+
+            // Determine start node/offset
+            let startNode, startOffset;
+            if (isForward) {
+                startNode = this._selectionAnchor.node;
+                startOffset = this._selectionAnchor.offset;
+            } else {
+                // Anchor was ahead; start from beginning of target block
+                const firstText = this._firstTextNode(startBlock);
+                startNode = firstText || startBlock;
+                startOffset = 0;
+            }
+
+            // Determine end node/offset — use caret position from click coordinates
+            let endNode, endOffset;
+            const caretPos = this._caretFromPoint(e.clientX, e.clientY);
+            if (caretPos && this._closestBlock(caretPos.node) === (isForward ? endBlock : this._selectionAnchor.block)) {
+                if (isForward) {
+                    endNode = caretPos.node;
+                    endOffset = caretPos.offset;
+                } else {
+                    // Clicking backward: the caret position becomes the new start
+                    startNode = caretPos.node;
+                    startOffset = caretPos.offset;
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                }
+            } else {
+                // Fallback: select to end/start of block
+                if (isForward) {
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                } else {
+                    const firstText = this._firstTextNode(startBlock);
+                    startNode = firstText || startBlock;
+                    startOffset = 0;
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                }
+            }
+
+            // Build and apply the range
+            try {
+                const range = document.createRange();
+                range.setStart(startNode, startOffset);
+                range.setEnd(endNode, endOffset);
+
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (err) {
+                console.warn('Multi-block selection: could not create range', err);
+            }
+        });
+    },
+
+    /**
+     * Find the closest .ce-block ancestor of a DOM node
+     */
+    _closestBlock(node) {
+        if (!node) return null;
+        const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        return el?.closest('.ce-block') || null;
+    },
+
+    /**
+     * Get caret position from mouse coordinates
+     */
+    _caretFromPoint(x, y) {
+        // Modern browsers
+        if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(x, y);
+            if (pos) return { node: pos.offsetNode, offset: pos.offset };
+        }
+        // WebKit / Blink
+        if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(x, y);
+            if (range) return { node: range.startContainer, offset: range.startOffset };
+        }
+        return null;
+    },
+
+    /**
+     * Get the first text node inside an element (depth-first)
+     */
+    _firstTextNode(el) {
+        if (!el) return null;
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        return walker.firstChild();
+    },
+
+    /**
+     * Get the last text node inside an element (depth-first)
+     */
+    _lastTextNode(el) {
+        if (!el) return null;
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        let last = null;
+        while (walker.nextNode()) {
+            last = walker.currentNode;
+        }
+        return last;
     },
 
     /**

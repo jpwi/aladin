@@ -189,6 +189,30 @@ body {
     opacity: 1;
 }
 
+.fallback-save-status {
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin-left: var(--spacing-sm);
+    font-style: italic;
+}
+
+.fallback-save-status.visible {
+    opacity: 0.8;
+}
+
+.fallback-banner kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    vertical-align: middle;
+}
+
 /* Adjust app container when banner is visible */
 body.fallback-mode .app-container {
     margin-top: 40px;
@@ -206,6 +230,12 @@ body.fallback-mode .app-container {
     background: linear-gradient(135deg, #4d1c24 0%, #5d2c34 100%);
     border-bottom-color: #dc3545;
     color: #f5c6cb;
+}
+
+:root[data-theme="dark"] .fallback-banner kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: inherit;
 }
 
 /* ========================================
@@ -584,16 +614,47 @@ h6.ce-header {
     border-radius: 4px;
 }
 
-/* Toolbar */
+/* Cross-block text selection highlighting */
+.ce-block ::selection {
+    background-color: Highlight;
+    color: HighlightText;
+}
+
+:root[data-theme="dark"] .ce-block ::selection {
+    background-color: #264f78;
+    color: #ffffff;
+}
+
+/* Toolbar — merge plus + settings into a single hover group */
+.ce-toolbar__actions {
+    display: flex;
+    gap: 0;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+/* Show toolbar on block hover/focus */
+.ce-toolbar--opened .ce-toolbar__actions {
+    opacity: 1;
+}
+
 .ce-toolbar__plus,
 .ce-toolbar__settings-btn {
     color: var(--text-muted);
-    transition: color var(--transition-fast);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+    border-radius: 4px;
 }
 
 .ce-toolbar__plus:hover,
 .ce-toolbar__settings-btn:hover {
     color: var(--accent-primary);
+    background-color: var(--accent-light);
 }
 
 /* Inline Toolbar */

@@ -672,10 +672,15 @@ document.addEventListener("DOMContentLoaded", () => {
 // Save before unload and release handle for cloud sync
 window.addEventListener("beforeunload", async (e) => {
     if (App.isInitialized && !Vault.isLocked) {
-        // Save synchronously
-        await Storage.saveToVault();
-        // Release handle so cloud sync can work after tab closes
-        Vault.releaseFileHandle();
+        if (Vault.hasFileSystemAccess && Vault.fileHandle) {
+            // File System Access API: save directly to file
+            await Storage.saveToVault();
+            // Release handle so cloud sync can work after tab closes
+            Vault.releaseFileHandle();
+        } else {
+            // Fallback mode: save to IndexedDB (download requires user gesture, can't do on unload)
+            await Storage.saveToVault();
+        }
     }
 });
 

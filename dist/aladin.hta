@@ -218,6 +218,30 @@ body {
     opacity: 1;
 }
 
+.fallback-save-status {
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    margin-left: var(--spacing-sm);
+    font-style: italic;
+}
+
+.fallback-save-status.visible {
+    opacity: 0.8;
+}
+
+.fallback-banner kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+    vertical-align: middle;
+}
+
 /* Adjust app container when banner is visible */
 body.fallback-mode .app-container {
     margin-top: 40px;
@@ -235,6 +259,12 @@ body.fallback-mode .app-container {
     background: linear-gradient(135deg, #4d1c24 0%, #5d2c34 100%);
     border-bottom-color: #dc3545;
     color: #f5c6cb;
+}
+
+:root[data-theme="dark"] .fallback-banner kbd {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: inherit;
 }
 
 /* ========================================
@@ -613,16 +643,47 @@ h6.ce-header {
     border-radius: 4px;
 }
 
-/* Toolbar */
+/* Cross-block text selection highlighting */
+.ce-block ::selection {
+    background-color: Highlight;
+    color: HighlightText;
+}
+
+:root[data-theme="dark"] .ce-block ::selection {
+    background-color: #264f78;
+    color: #ffffff;
+}
+
+/* Toolbar — merge plus + settings into a single hover group */
+.ce-toolbar__actions {
+    display: flex;
+    gap: 0;
+    align-items: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1px;
+    box-shadow: var(--shadow-sm);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+/* Show toolbar on block hover/focus */
+.ce-toolbar--opened .ce-toolbar__actions {
+    opacity: 1;
+}
+
 .ce-toolbar__plus,
 .ce-toolbar__settings-btn {
     color: var(--text-muted);
-    transition: color var(--transition-fast);
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+    border-radius: 4px;
 }
 
 .ce-toolbar__plus:hover,
 .ce-toolbar__settings-btn:hover {
     color: var(--accent-primary);
+    background-color: var(--accent-light);
 }
 
 /* Inline Toolbar */
@@ -2911,8 +2972,9 @@ try {
     <div class="fallback-banner hidden" id="fallback-banner">
         <span class="fallback-message">
             📁 Your browser doesn't support auto-save to file.
-            <button class="btn-link" id="fallback-save-btn">Save to file</button>
-            to keep your changes.
+            <button class="btn-link" id="fallback-save-btn">💾 Save to file</button>
+            or press <kbd>Ctrl+S</kbd> to download your vault.
+            <span class="fallback-save-status" id="fallback-save-status"></span>
         </span>
         <button class="fallback-dismiss" id="fallback-dismiss" aria-label="Dismiss">×</button>
     </div>
@@ -3415,7 +3477,7 @@ const Vault = {
         if (saveBtn) {
             saveBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                await this.exportVault();
+                await this.downloadVaultFile();
             });
         }
 
@@ -3428,12 +3490,22 @@ const Vault = {
             });
         }
 
+        // Add Ctrl+S / Cmd+S keyboard shortcut for saving
+        document.addEventListener('keydown', async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (!this.isLocked && this.password) {
+                    await this.downloadVaultFile();
+                }
+            }
+        });
+
         // Add beforeunload warning for unsaved changes
         window.addEventListener('beforeunload', (e) => {
             if (this.isDirty && !this.isLocked) {
                 e.preventDefault();
                 // Modern browsers ignore custom messages, but we still need to set returnValue
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = 'You have unsaved changes. Press Ctrl+S to save first.';
                 return e.returnValue;
             }
         });
@@ -3468,6 +3540,66 @@ const Vault = {
             banner.classList.remove('hidden');
         } else {
             banner.classList.remove('has-unsaved');
+        }
+    },
+
+    /**
+     * Download the vault as a .aladin file (for browsers without File System Access API)
+     * This is the primary save mechanism in fallback mode
+     */
+    async downloadVaultFile() {
+        if (this.isLocked || !this.password) {
+            console.warn('Vault: Cannot save - vault is locked');
+            return { success: false, locked: true };
+        }
+
+        try {
+            // Get current data from IndexedDB
+            const data = await this.loadFromIndexedDB() || this.createVaultStructure(null);
+
+            // Encrypt
+            const encrypted = await Crypto.encrypt(data, this.password);
+            const json = JSON.stringify(encrypted, null, 2);
+
+            // Get the vault file name
+            const fileName = localStorage.getItem(this.STORAGE_KEYS.FILE_NAME) || 'knowledge-base.aladin';
+
+            // Create and trigger download
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Clear dirty flag
+            this.isDirty = false;
+            this.lastSaveTime = new Date();
+            this.updateFallbackBanner();
+            this.updateFallbackSaveStatus();
+
+            console.log('Vault: Downloaded vault file:', fileName);
+            return { success: true, name: fileName, fallback: true };
+        } catch (error) {
+            console.error('Vault: Failed to download vault file:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Update the save status indicator in the fallback banner
+     */
+    updateFallbackSaveStatus() {
+        const statusEl = document.getElementById('fallback-save-status');
+        if (!statusEl) return;
+
+        if (this.lastSaveTime) {
+            const time = this.lastSaveTime.toLocaleTimeString();
+            statusEl.textContent = `Last saved: ${time}`;
+            statusEl.classList.add('visible');
         }
     },
 
@@ -3883,10 +4015,10 @@ const Vault = {
         if (this.hasFileSystemAccess && this.fileHandle) {
             await this.saveToFile(vaultData);
         } else {
-            // Fallback: save to IndexedDB
+            // Fallback: save to IndexedDB (working copy)
             await this.saveToIndexedDB(vaultData);
             this.isDirty = true;
-            // Update banner to show unsaved state
+            // Update banner to show unsaved state with clear action guidance
             this.updateFallbackBanner();
         }
 
@@ -7128,6 +7260,7 @@ const Editor = {
                 this.setupDragDrop();
                 this.setupBlockDragHandles();
                 this.setupImmediateSave();
+                this.setupMultiBlockSelection();
                 this.loadTagsFromContent(content.blocks);
                 this.loadPeopleFromStorage();
                 this.loadMentionsFromContent(content.blocks);
@@ -9011,6 +9144,9 @@ const Editor = {
         settingsBtn.title = 'Drag to reorder • Click for settings';
         settingsBtn.style.cursor = 'grab';
 
+        // Track drag state to suppress click-to-open-settings after drag
+        let didDrag = false;
+
         // Drag start on settings button
         settingsBtn.addEventListener('dragstart', (e) => {
             // Find current focused block
@@ -9019,6 +9155,8 @@ const Editor = {
                 e.preventDefault();
                 return;
             }
+
+            didDrag = true;
 
             this.draggedBlock = focusedBlock;
             this.draggedBlockIndex = this.getBlockIndex(focusedBlock);
@@ -9031,7 +9169,23 @@ const Editor = {
 
             // Prevent text selection during drag
             document.body.style.userSelect = 'none';
+
+            // Close any open settings popover immediately
+            this._closeSettingsPopover();
         });
+
+        // Suppress the click that fires after drag ends
+        settingsBtn.addEventListener('click', (e) => {
+            if (didDrag) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                didDrag = false;
+
+                // Also close the settings popover if it managed to open
+                requestAnimationFrame(() => this._closeSettingsPopover());
+                return;
+            }
+        }, true); // capture phase to fire before Editor.js handler
 
         // Drag end
         settingsBtn.addEventListener('dragend', (e) => {
@@ -9050,6 +9204,30 @@ const Editor = {
             this.container.querySelectorAll('.ce-block').forEach(b => {
                 b.classList.remove('drag-over-top', 'drag-over-bottom');
             });
+
+            // Close settings popover that may have opened due to click
+            requestAnimationFrame(() => this._closeSettingsPopover());
+
+            // Reset didDrag after a short delay (click fires after dragend)
+            setTimeout(() => { didDrag = false; }, 200);
+        });
+    },
+
+    /**
+     * Close the Editor.js settings popover if it is open
+     */
+    _closeSettingsPopover() {
+        // Editor.js uses ce-popover for the settings menu
+        const popovers = document.querySelectorAll('.ce-popover--opened, .ce-settings--opened, .ce-popover:not(.ce-popover--hidden)');
+        popovers.forEach(p => {
+            // Click outside to close, or add hidden class
+            if (p.classList.contains('ce-popover--opened')) {
+                p.classList.remove('ce-popover--opened');
+                p.classList.add('ce-popover--hidden');
+            }
+            if (p.classList.contains('ce-settings--opened')) {
+                p.classList.remove('ce-settings--opened');
+            }
         });
     },
 
@@ -9346,6 +9524,186 @@ const Editor = {
         this.cleanupTimeout = setTimeout(async () => {
             await FileHandler.cleanupOrphanedAttachments(blocks);
         }, 10000);
+    },
+
+    // ==========================================
+    // Multi-Block Selection (SHIFT+click)
+    // ==========================================
+
+    // Selection anchor state
+    _selectionAnchor: null,
+
+    /**
+     * Setup multi-block SHIFT+click selection across Editor.js blocks.
+     * Editor.js uses separate contenteditable elements per block, so native
+     * SHIFT+click cannot cross block boundaries. This handler bridges the gap.
+     */
+    setupMultiBlockSelection() {
+        const editorContainer = this.container;
+
+        // On mousedown (without Shift) — record the anchor position
+        editorContainer.addEventListener('mousedown', (e) => {
+            if (e.shiftKey) return; // Shift+click is handled separately
+
+            // Record anchor on next tick so the browser places the caret first
+            requestAnimationFrame(() => {
+                const sel = window.getSelection();
+                if (!sel || !sel.rangeCount) return;
+
+                const range = sel.getRangeAt(0);
+                const block = this._closestBlock(range.startContainer);
+                if (!block) return;
+
+                this._selectionAnchor = {
+                    node: range.startContainer,
+                    offset: range.startOffset,
+                    block: block,
+                };
+            });
+        });
+
+        // On Shift+mousedown — prevent default single-block behaviour so
+        // we can create a cross-block range in the mouseup handler instead.
+        editorContainer.addEventListener('mousedown', (e) => {
+            if (!e.shiftKey) return;
+            if (!this._selectionAnchor) return;
+
+            const targetBlock = this._closestBlock(e.target);
+            if (!targetBlock) return;
+
+            // Only intercept when the click lands in a *different* block
+            if (targetBlock === this._selectionAnchor.block) return;
+
+            // Prevent the browser's native (broken cross-CE) selection
+            e.preventDefault();
+        });
+
+        // On Shift+mouseup — build the cross-block selection
+        editorContainer.addEventListener('mouseup', (e) => {
+            if (!e.shiftKey) return;
+            if (!this._selectionAnchor) return;
+
+            const targetBlock = this._closestBlock(e.target);
+            if (!targetBlock) return;
+
+            // Same block → let native selection handle it
+            if (targetBlock === this._selectionAnchor.block) return;
+
+            // Determine document order of anchor and target blocks
+            const blocks = Array.from(editorContainer.querySelectorAll('.ce-block'));
+            const anchorIdx = blocks.indexOf(this._selectionAnchor.block);
+            const targetIdx = blocks.indexOf(targetBlock);
+
+            if (anchorIdx === -1 || targetIdx === -1) return;
+
+            const isForward = anchorIdx < targetIdx;
+            const startBlock = isForward ? this._selectionAnchor.block : targetBlock;
+            const endBlock = isForward ? targetBlock : this._selectionAnchor.block;
+
+            // Determine start node/offset
+            let startNode, startOffset;
+            if (isForward) {
+                startNode = this._selectionAnchor.node;
+                startOffset = this._selectionAnchor.offset;
+            } else {
+                // Anchor was ahead; start from beginning of target block
+                const firstText = this._firstTextNode(startBlock);
+                startNode = firstText || startBlock;
+                startOffset = 0;
+            }
+
+            // Determine end node/offset — use caret position from click coordinates
+            let endNode, endOffset;
+            const caretPos = this._caretFromPoint(e.clientX, e.clientY);
+            if (caretPos && this._closestBlock(caretPos.node) === (isForward ? endBlock : this._selectionAnchor.block)) {
+                if (isForward) {
+                    endNode = caretPos.node;
+                    endOffset = caretPos.offset;
+                } else {
+                    // Clicking backward: the caret position becomes the new start
+                    startNode = caretPos.node;
+                    startOffset = caretPos.offset;
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                }
+            } else {
+                // Fallback: select to end/start of block
+                if (isForward) {
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                } else {
+                    const firstText = this._firstTextNode(startBlock);
+                    startNode = firstText || startBlock;
+                    startOffset = 0;
+                    const lastText = this._lastTextNode(endBlock);
+                    endNode = lastText || endBlock;
+                    endOffset = endNode.nodeType === Node.TEXT_NODE ? endNode.length : 0;
+                }
+            }
+
+            // Build and apply the range
+            try {
+                const range = document.createRange();
+                range.setStart(startNode, startOffset);
+                range.setEnd(endNode, endOffset);
+
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } catch (err) {
+                console.warn('Multi-block selection: could not create range', err);
+            }
+        });
+    },
+
+    /**
+     * Find the closest .ce-block ancestor of a DOM node
+     */
+    _closestBlock(node) {
+        if (!node) return null;
+        const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        return el?.closest('.ce-block') || null;
+    },
+
+    /**
+     * Get caret position from mouse coordinates
+     */
+    _caretFromPoint(x, y) {
+        // Modern browsers
+        if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(x, y);
+            if (pos) return { node: pos.offsetNode, offset: pos.offset };
+        }
+        // WebKit / Blink
+        if (document.caretRangeFromPoint) {
+            const range = document.caretRangeFromPoint(x, y);
+            if (range) return { node: range.startContainer, offset: range.startOffset };
+        }
+        return null;
+    },
+
+    /**
+     * Get the first text node inside an element (depth-first)
+     */
+    _firstTextNode(el) {
+        if (!el) return null;
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        return walker.firstChild();
+    },
+
+    /**
+     * Get the last text node inside an element (depth-first)
+     */
+    _lastTextNode(el) {
+        if (!el) return null;
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        let last = null;
+        while (walker.nextNode()) {
+            last = walker.currentNode;
+        }
+        return last;
     },
 
     /**
@@ -12439,10 +12797,15 @@ document.addEventListener("DOMContentLoaded", () => {
 // Save before unload and release handle for cloud sync
 window.addEventListener("beforeunload", async (e) => {
     if (App.isInitialized && !Vault.isLocked) {
-        // Save synchronously
-        await Storage.saveToVault();
-        // Release handle so cloud sync can work after tab closes
-        Vault.releaseFileHandle();
+        if (Vault.hasFileSystemAccess && Vault.fileHandle) {
+            // File System Access API: save directly to file
+            await Storage.saveToVault();
+            // Release handle so cloud sync can work after tab closes
+            Vault.releaseFileHandle();
+        } else {
+            // Fallback mode: save to IndexedDB (download requires user gesture, can't do on unload)
+            await Storage.saveToVault();
+        }
     }
 });
 

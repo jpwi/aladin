@@ -72,7 +72,7 @@ const Vault = {
         if (saveBtn) {
             saveBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
-                await this.exportVault();
+                await this.downloadVaultFile();
             });
         }
 
@@ -85,12 +85,22 @@ const Vault = {
             });
         }
 
+        // Add Ctrl+S / Cmd+S keyboard shortcut for saving
+        document.addEventListener('keydown', async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                if (!this.isLocked && this.password) {
+                    await this.downloadVaultFile();
+                }
+            }
+        });
+
         // Add beforeunload warning for unsaved changes
         window.addEventListener('beforeunload', (e) => {
             if (this.isDirty && !this.isLocked) {
                 e.preventDefault();
                 // Modern browsers ignore custom messages, but we still need to set returnValue
-                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                e.returnValue = 'You have unsaved changes. Press Ctrl+S to save first.';
                 return e.returnValue;
             }
         });
@@ -125,6 +135,66 @@ const Vault = {
             banner.classList.remove('hidden');
         } else {
             banner.classList.remove('has-unsaved');
+        }
+    },
+
+    /**
+     * Download the vault as a .aladin file (for browsers without File System Access API)
+     * This is the primary save mechanism in fallback mode
+     */
+    async downloadVaultFile() {
+        if (this.isLocked || !this.password) {
+            console.warn('Vault: Cannot save - vault is locked');
+            return { success: false, locked: true };
+        }
+
+        try {
+            // Get current data from IndexedDB
+            const data = await this.loadFromIndexedDB() || this.createVaultStructure(null);
+
+            // Encrypt
+            const encrypted = await Crypto.encrypt(data, this.password);
+            const json = JSON.stringify(encrypted, null, 2);
+
+            // Get the vault file name
+            const fileName = localStorage.getItem(this.STORAGE_KEYS.FILE_NAME) || 'knowledge-base.aladin';
+
+            // Create and trigger download
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Clear dirty flag
+            this.isDirty = false;
+            this.lastSaveTime = new Date();
+            this.updateFallbackBanner();
+            this.updateFallbackSaveStatus();
+
+            console.log('Vault: Downloaded vault file:', fileName);
+            return { success: true, name: fileName, fallback: true };
+        } catch (error) {
+            console.error('Vault: Failed to download vault file:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Update the save status indicator in the fallback banner
+     */
+    updateFallbackSaveStatus() {
+        const statusEl = document.getElementById('fallback-save-status');
+        if (!statusEl) return;
+
+        if (this.lastSaveTime) {
+            const time = this.lastSaveTime.toLocaleTimeString();
+            statusEl.textContent = `Last saved: ${time}`;
+            statusEl.classList.add('visible');
         }
     },
 
@@ -540,10 +610,10 @@ const Vault = {
         if (this.hasFileSystemAccess && this.fileHandle) {
             await this.saveToFile(vaultData);
         } else {
-            // Fallback: save to IndexedDB
+            // Fallback: save to IndexedDB (working copy)
             await this.saveToIndexedDB(vaultData);
             this.isDirty = true;
-            // Update banner to show unsaved state
+            // Update banner to show unsaved state with clear action guidance
             this.updateFallbackBanner();
         }
 
