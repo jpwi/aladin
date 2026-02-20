@@ -324,6 +324,7 @@ const Editor = {
                 console.log("Editor.js is ready");
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
+                this.setupEmptyListItemBackspace();
                 this.setupSlashCommands();
                 this.setupStarCommands();
                 this.setupHashtagCommands();
@@ -463,6 +464,75 @@ const Editor = {
                     );
                 }
                 return;
+            }
+        });
+    },
+
+    /**
+     * Handle Backspace key for empty list items
+     * When pressing Backspace on an empty list item, convert it to a paragraph
+     * instead of jumping to the previous line
+     */
+    setupEmptyListItemBackspace() {
+        this.container.addEventListener("keydown", async (e) => {
+            if (e.key !== "Backspace") return;
+
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            
+            // Find the closest block
+            const block = range.startContainer.parentElement?.closest(".ce-block");
+            if (!block) return;
+
+            // Get the block index
+            const blocks = this.container.querySelectorAll(".ce-block");
+            let blockIndex = -1;
+            blocks.forEach((b, i) => {
+                if (b === block) blockIndex = i;
+            });
+
+            if (blockIndex < 0) return;
+
+            // Use Editor.js API to get block info
+            try {
+                const blockInfo = this.instance.blocks.get(blockIndex);
+                
+                // Only handle list blocks
+                if (blockInfo.tool !== 'list') return;
+                
+                // Get the list item element
+                const listItem = range.startContainer.closest(".cdx-list-item");
+                if (!listItem) return;
+
+                // Get the text content
+                const text = listItem.textContent || "";
+                const trimmedText = text.trim();
+
+                // Only handle empty list items
+                if (trimmedText !== "") return;
+
+                // Prevent default backspace behavior
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Delete the current list block and insert a paragraph at the same position
+                await this.instance.blocks.delete(blockIndex);
+                await this.instance.blocks.insert(
+                    "paragraph",
+                    { text: "" },
+                    {},
+                    blockIndex,
+                    true,
+                );
+
+                // Focus the new paragraph and set cursor at start
+                setTimeout(() => {
+                    this.instance.caret.setToBlock(blockIndex, "start");
+                }, 50);
+            } catch (error) {
+                // Block might not exist or other error
             }
         });
     },
