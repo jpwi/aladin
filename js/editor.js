@@ -324,6 +324,7 @@ const Editor = {
                 console.log("Editor.js is ready");
                 this.setupBlockIds();
                 this.setupMarkdownShortcuts();
+                this.setupEmptyListItemBackspace();
                 this.setupSlashCommands();
                 this.setupStarCommands();
                 this.setupHashtagCommands();
@@ -463,6 +464,73 @@ const Editor = {
                     );
                 }
                 return;
+            }
+        });
+    },
+
+    /**
+     * Handle Backspace key for empty list items
+     * When pressing Backspace on an empty list item, convert it to a paragraph
+     * instead of jumping to the previous line
+     */
+    setupEmptyListItemBackspace() {
+        this.container.addEventListener("keydown", async (e) => {
+            if (e.key !== "Backspace") return;
+
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+
+            const range = selection.getRangeAt(0);
+            
+            // Find the closest block (could be list wrapper or a list item)
+            const block = range.startContainer.parentElement?.closest(".ce-block");
+            if (!block) return;
+
+            // Check if this is a list block
+            const listBlock = block.closest(".ce-block[data-type=\"list\"]");
+            if (!listBlock) return;
+
+            // Get the current list item (cdx-list-item)
+            const listItem = range.startContainer.closest(".cdx-list-item");
+            if (!listItem) return;
+
+            // Get the text content of the list item
+            const text = listItem.textContent || "";
+            const trimmedText = text.trim();
+
+            // Only handle empty list items (or those with only whitespace)
+            if (trimmedText !== "") return;
+
+            // Get the block index
+            const blocks = this.container.querySelectorAll(".ce-block");
+            let blockIndex = -1;
+            blocks.forEach((b, i) => {
+                if (b === block || b.contains(listItem)) blockIndex = i;
+            });
+
+            if (blockIndex < 0) return;
+
+            // Prevent default backspace behavior
+            e.preventDefault();
+            e.stopPropagation();
+
+            try {
+                // Delete the current list block and insert a paragraph at the same position
+                await this.instance.blocks.delete(blockIndex);
+                await this.instance.blocks.insert(
+                    "paragraph",
+                    { text: "" },
+                    {},
+                    blockIndex,
+                    true,
+                );
+
+                // Focus the new paragraph and set cursor at start
+                setTimeout(() => {
+                    this.instance.caret.setToBlock(blockIndex, "start");
+                }, 50);
+            } catch (error) {
+                console.error("Error converting empty list item to paragraph:", error);
             }
         });
     },
